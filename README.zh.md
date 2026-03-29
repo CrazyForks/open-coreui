@@ -54,6 +54,7 @@ Open WebUI 轻量版，一个轻量级的 Open WebUI 实现
 **适用场景**：个人电脑使用，提供原生窗口界面
 
 **特点**：
+
 - 开箱即用，双击安装即可
 - 独立运行，不依赖服务端
 - 原生窗口体验
@@ -63,6 +64,7 @@ Open WebUI 轻量版，一个轻量级的 Open WebUI 实现
 **适用场景**：服务器部署，通过浏览器访问
 
 **特点**：
+
 - 命令行启动，通过浏览器访问
 - 独立运行，不依赖桌面端
 - 适合服务器部署和多用户访问
@@ -72,12 +74,13 @@ Open WebUI 轻量版，一个轻量级的 Open WebUI 实现
 **桌面端**：直接安装后打开应用即可使用
 
 > **macOS 用户注意**：如果打开时提示"应用已损坏"等问题，请打开`终端`并执行以下命令：
-> 
+>
 > ```bash
 > sudo xattr -d com.apple.quarantine "/Applications/Open CoreUI Desktop.app"
 > ```
 
 **服务端**：
+
 1. 下载对应系统的二进制文件
 2. 赋予执行权限（Linux/macOS）：`chmod +x open-coreui-*`
 3. 运行：`./open-coreui-*`
@@ -88,4 +91,4 @@ Open WebUI 轻量版，一个轻量级的 Open WebUI 实现
 ## 致谢
 
 - [open-webui](https://github.com/open-webui/open-webui) - 原始的优秀项目
-- [knox](https://github.com/knoxchat) - 初始版本的 Rust 后端作者，因某些原因停止了后端的开源，但他完成了大部分的后端转换工作，对此我非常感激 knox 的贡献。
+- knox - 一个 Open WebUI 的闭源商业版 Rust 后端作者，受其启发，我开始用 Go 重写后端并跟上 Open WebUI 的最新版本。

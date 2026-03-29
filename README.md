@@ -54,6 +54,7 @@ This project provides two **completely independent** clients. Choose one based o
 **Use Case**: Personal computer use with native window interface
 
 **Features**:
+
 - Ready to use out of the box
 - Runs independently, no server required
 - Native window experience
@@ -63,6 +64,7 @@ This project provides two **completely independent** clients. Choose one based o
 **Use Case**: Server deployment, access via web browser
 
 **Features**:
+
 - Command-line launch, access via browser
 - Runs independently, no desktop client required
 - Suitable for server deployment and multi-user access
@@ -72,12 +74,13 @@ This project provides two **completely independent** clients. Choose one based o
 **Desktop Client**: Simply install and open the application
 
 > **macOS Users**: If you see "app is damaged" error when opening, please open `Terminal` and run this command:
-> 
+>
 > ```bash
 > sudo xattr -d com.apple.quarantine "/Applications/Open CoreUI Desktop.app"
 > ```
 
 **Backend Server**:
+
 1. Download the binary file for your system
 2. Grant execute permission (Linux/macOS): `chmod +x open-coreui-*`
 3. Run: `./open-coreui-*`
@@ -88,4 +91,4 @@ For detailed configuration options and environment variables, see [CLI Documenta
 ## Thanks
 
 - [open-webui](https://github.com/open-webui/open-webui) - The original awesome project
-- [knox](https://github.com/knoxchat) - The original author of the Rust backend stopped open-sourcing the [backend](https://github.com/knoxchat/open-webui-rust)(MIT) for [certain reasons](https://github.com/xxnuo/open-coreui/discussions/8), but he completed most of the foundational backend conversion work, for which I am deeply grateful for knox's contributions.
+- knox - The author of an commercial rust backend of open-webui, inspired by him, I started totally rewriting the backend in golang and kept up with the latest Open Web UI version.
