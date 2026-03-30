@@ -10,7 +10,7 @@ entries:
     last_verified_at: null
   - python_path: "open-webui/backend/open_webui/config.py"
     go_path: "backend/open_webui/config.go"
-    status: "stub"
+    status: "ported"
     companions: []
     source_submodule_sha: "9bd84258d09eefe7bf975878fb0e31a5dadfe0f8"
     last_verified_at: null
@@ -34,7 +34,7 @@ entries:
     last_verified_at: null
   - python_path: "open-webui/backend/open_webui/internal/db.py"
     go_path: "backend/open_webui/internal/db.go"
-    status: "stub"
+    status: "ported"
     companions: []
     source_submodule_sha: "9bd84258d09eefe7bf975878fb0e31a5dadfe0f8"
     last_verified_at: null

@@ -8,7 +8,7 @@ import (
 	"github.com/xxnuo/open-coreui/backend/internal/platform/proxy"
 )
 
-func NewHandler(cfg Config) (http.Handler, error) {
+func NewHandler(cfg RuntimeConfig) (http.Handler, error) {
 	if cfg.PythonBaseURL == "" {
 		return nil, errors.New("python base url is required")
 	}

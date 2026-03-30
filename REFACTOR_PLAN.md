@@ -831,3 +831,9 @@ backend/
 - [x] 12.8 运行清单生成与 stub 生成
 - [x] 12.9 运行 `go test ./...`
 - [x] 12.10 回写已完成勾选状态
+- [x] 12.11 扩展 `backend/open_webui/env.go`，补齐 DB 相关运行配置
+- [x] 12.12 实现 `backend/open_webui/internal/db.go` 的最小数据库连接层
+- [x] 12.13 实现 `backend/open_webui/config.go` 的最小配置存取层
+- [x] 12.14 为 `config.go` 与 `internal/db.go` 补最小测试
+- [x] 12.15 运行 `go mod tidy`
+- [x] 12.16 再次运行 `go test ./...`
