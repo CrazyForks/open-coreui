@@ -896,3 +896,69 @@ backend/
 - [x] 12.73 扩展 `backend/open_webui/routers/users.go`，补 user status/active 路由
 - [x] 12.74 为 user status/active 补测试
 - [x] 12.75 再次运行 `go test ./...`
+- [x] 12.76 扩展 `backend/open_webui/models/users.go`，补 active 判定能力
+- [x] 12.77 细化 `backend/open_webui/routers/users.go` 的 info/active/profile image 返回
+- [x] 12.78 为细化后的 users 路由补测试
+- [x] 12.79 再次运行 `go test ./...`
+- [x] 12.80 扩展 `backend/open_webui/models/users.go`，补 api_key 增删改查
+- [x] 12.81 扩展 `backend/open_webui/utils/auth.go`，补 api key 生成能力
+- [x] 12.82 扩展 `backend/open_webui/routers/auths.go`，补 `GET/POST/DELETE /api_key`
+- [x] 12.83 为 api_key 接口补测试
+- [x] 12.84 再次运行 `go test ./...`
+- [x] 12.85 将 api key 接入当前用户解析
+- [x] 12.86 扩展 auths/users 路由测试，验证 api key 可用于鉴权
+- [x] 12.87 再次运行 `go test ./...`
+- [x] 12.88 扩展 `backend/open_webui/routers/auths.go`，补管理员 add user
+- [x] 12.89 扩展 `backend/open_webui/routers/auths.go`，补 `admin/details`
+- [x] 12.90 扩展运行配置，补 `SHOW_ADMIN_DETAILS` 与 `ADMIN_EMAIL`
+- [x] 12.91 为新增管理员接口补测试
+- [x] 12.92 再次运行 `go test ./...`
+- [x] 12.93 实现 `backend/open_webui/migrations/versions/922e7a387820_add_group_table.go`
+- [x] 12.94 实现 `backend/open_webui/migrations/versions/37f288994c47_add_group_member_table.go`
+- [x] 12.95 将 group 相关迁移接入 `backend/open_webui/migrations/env.go`
+- [x] 12.96 实现 `backend/open_webui/models/groups.go` 的最小仓储层
+- [x] 12.97 扩展 `backend/open_webui/models/users.go`，补 `get_valid_user_ids`
+- [x] 12.98 实现 `backend/open_webui/routers/groups.go` 的最小 CRUD 与成员管理
+- [x] 12.99 将 `groups` 路由接入 `backend/open_webui/main.go`
+- [x] 12.100 为 groups 增加最小测试
+- [x] 12.101 更新 `backend/SYNC_MAP.yaml` 中 group 相关文件状态
+- [x] 12.102 再次运行 `go test ./...`
+- [x] 12.103 扩展 `backend/open_webui/models/users.go`，补按 group/user 查询成员
+- [x] 12.104 扩展 `backend/open_webui/routers/users.go`，补 `/{user_id}/groups`
+- [x] 12.105 扩展 `backend/open_webui/routers/groups.go`，补 `/id/{id}/users`
+- [x] 12.106 将 users info/get 响应接入真实 groups 数据
+- [x] 12.107 为成员查询接口补测试
+- [x] 12.108 再次运行 `go test ./...`
+- [x] 12.109 实现 `backend/open_webui/migrations/versions/38d63c18f30f_add_oauth_session_table.go`
+- [x] 12.110 将 oauth session 迁移接入 `backend/open_webui/migrations/env.go`
+- [x] 12.111 实现 `backend/open_webui/models/oauth_sessions.go` 的最小仓储层
+- [x] 12.112 扩展 `backend/open_webui/routers/users.go`，补 `/{user_id}/oauth/sessions`
+- [x] 12.113 在 `main.go` 接入 oauth session 依赖
+- [x] 12.114 为 oauth session 路由补测试
+- [x] 12.115 更新 `backend/SYNC_MAP.yaml` 中 oauth session 相关文件状态
+- [x] 12.116 再次运行 `go test ./...`
+- [x] 12.117 扩展 `backend/open_webui/models/users.go`，补用户列表/搜索能力
+- [x] 12.118 扩展 `backend/open_webui/routers/users.go`，补 `/` `/all` `/search` `/groups`
+- [x] 12.119 为 users 列表接口补测试
+- [x] 12.120 再次运行 `go test ./...`
+- [x] 12.121 扩展 `backend/open_webui/routers/groups.go`，补 `/id/{id}/export`
+- [x] 12.122 为 groups export 补测试
+- [x] 12.123 再次运行 `go test ./...`
+- [x] 12.124 扩展运行配置，补 `ENABLE_SIGNUP` 与 `DEFAULT_USER_ROLE`
+- [x] 12.125 扩展 `backend/open_webui/routers/auths.go`，补 `GET /admin/config`
+- [x] 12.126 为 `admin/config` 补测试
+- [x] 12.127 再次运行 `go test ./...`
+- [x] 12.128 实现 `backend/open_webui/migrations/versions/9f0c9cd09105_add_note_table.go`
+- [x] 12.129 将 note 迁移接入 `backend/open_webui/migrations/env.go`
+- [x] 12.130 实现 `backend/open_webui/models/notes.go` 的最小仓储层
+- [x] 12.131 实现 `backend/open_webui/routers/notes.go` 的最小 CRUD
+- [x] 12.132 在 `main.go` 接入 notes 路由
+- [x] 12.133 为 notes 增加最小测试
+- [x] 12.134 更新 `backend/SYNC_MAP.yaml` 中 note 相关文件状态
+- [x] 12.135 再次运行 `go test ./...`
+- [ ] 12.136 实现 `backend/open_webui/models/memories.go` 的最小仓储层
+- [ ] 12.137 实现 `backend/open_webui/routers/memories.go` 的最小 CRUD
+- [ ] 12.138 在 `main.go` 接入 memories 路由
+- [ ] 12.139 为 memories 增加最小测试
+- [ ] 12.140 更新 `backend/SYNC_MAP.yaml` 中 memory 相关文件状态
+- [ ] 12.141 再次运行 `go test ./...`

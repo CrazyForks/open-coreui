@@ -208,13 +208,13 @@ entries:
     last_verified_at: null
   - python_path: "open-webui/backend/open_webui/migrations/versions/37f288994c47_add_group_member_table.py"
     go_path: "backend/open_webui/migrations/versions/37f288994c47_add_group_member_table.go"
-    status: "stub"
+    status: "ported"
     companions: []
     source_submodule_sha: "9bd84258d09eefe7bf975878fb0e31a5dadfe0f8"
     last_verified_at: null
   - python_path: "open-webui/backend/open_webui/migrations/versions/38d63c18f30f_add_oauth_session_table.py"
     go_path: "backend/open_webui/migrations/versions/38d63c18f30f_add_oauth_session_table.go"
-    status: "stub"
+    status: "ported"
     companions: []
     source_submodule_sha: "9bd84258d09eefe7bf975878fb0e31a5dadfe0f8"
     last_verified_at: null
@@ -292,13 +292,13 @@ entries:
     last_verified_at: null
   - python_path: "open-webui/backend/open_webui/migrations/versions/922e7a387820_add_group_table.py"
     go_path: "backend/open_webui/migrations/versions/922e7a387820_add_group_table.go"
-    status: "stub"
+    status: "ported"
     companions: []
     source_submodule_sha: "9bd84258d09eefe7bf975878fb0e31a5dadfe0f8"
     last_verified_at: null
   - python_path: "open-webui/backend/open_webui/migrations/versions/9f0c9cd09105_add_note_table.py"
     go_path: "backend/open_webui/migrations/versions/9f0c9cd09105_add_note_table.go"
-    status: "stub"
+    status: "ported"
     companions: []
     source_submodule_sha: "9bd84258d09eefe7bf975878fb0e31a5dadfe0f8"
     last_verified_at: null
@@ -430,7 +430,7 @@ entries:
     last_verified_at: null
   - python_path: "open-webui/backend/open_webui/models/groups.py"
     go_path: "backend/open_webui/models/groups.go"
-    status: "stub"
+    status: "ported"
     companions: []
     source_submodule_sha: "9bd84258d09eefe7bf975878fb0e31a5dadfe0f8"
     last_verified_at: null
@@ -460,13 +460,13 @@ entries:
     last_verified_at: null
   - python_path: "open-webui/backend/open_webui/models/notes.py"
     go_path: "backend/open_webui/models/notes.go"
-    status: "stub"
+    status: "ported"
     companions: []
     source_submodule_sha: "9bd84258d09eefe7bf975878fb0e31a5dadfe0f8"
     last_verified_at: null
   - python_path: "open-webui/backend/open_webui/models/oauth_sessions.py"
     go_path: "backend/open_webui/models/oauth_sessions.go"
-    status: "stub"
+    status: "ported"
     companions: []
     source_submodule_sha: "9bd84258d09eefe7bf975878fb0e31a5dadfe0f8"
     last_verified_at: null
@@ -916,7 +916,7 @@ entries:
     last_verified_at: null
   - python_path: "open-webui/backend/open_webui/routers/groups.py"
     go_path: "backend/open_webui/routers/groups.go"
-    status: "stub"
+    status: "ported"
     companions: []
     source_submodule_sha: "9bd84258d09eefe7bf975878fb0e31a5dadfe0f8"
     last_verified_at: null
@@ -946,7 +946,7 @@ entries:
     last_verified_at: null
   - python_path: "open-webui/backend/open_webui/routers/notes.py"
     go_path: "backend/open_webui/routers/notes.go"
-    status: "stub"
+    status: "ported"
     companions: []
     source_submodule_sha: "9bd84258d09eefe7bf975878fb0e31a5dadfe0f8"
     last_verified_at: null

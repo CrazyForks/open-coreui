@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"strings"
 	"testing"
 	"time"
 )
@@ -35,5 +36,17 @@ func TestCreateAndDecodeToken(t *testing.T) {
 	}
 	if claims.ID != "user-1" {
 		t.Fatalf("unexpected user id: %s", claims.ID)
+	}
+}
+
+func TestCreateAPIKey(t *testing.T) {
+	t.Parallel()
+
+	apiKey, err := CreateAPIKey()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.HasPrefix(apiKey, "sk-") {
+		t.Fatalf("unexpected api key: %s", apiKey)
 	}
 }

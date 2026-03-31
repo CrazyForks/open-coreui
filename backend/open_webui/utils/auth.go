@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"errors"
 	"net/http"
 	"net/mail"
@@ -148,4 +150,12 @@ func ExtractTokenFromRequest(r *http.Request) string {
 		return strings.TrimSpace(cookie.Value)
 	}
 	return ""
+}
+
+func CreateAPIKey() (string, error) {
+	buf := make([]byte, 24)
+	if _, err := rand.Read(buf); err != nil {
+		return "", err
+	}
+	return "sk-" + hex.EncodeToString(buf), nil
 }

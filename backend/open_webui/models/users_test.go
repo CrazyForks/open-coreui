@@ -83,3 +83,46 @@ func TestUsersTableCRUD(t *testing.T) {
 		t.Fatal("expected deleted user")
 	}
 }
+
+func TestUsersTableAPIKeyLifecycle(t *testing.T) {
+	t.Parallel()
+
+	db := openModelsTestDB(t)
+	defer db.Close()
+
+	users := NewUsersTable(db)
+	_, err := users.InsertNewUser(context.Background(), UserInsertParams{
+		ID:              "user-api",
+		Email:           "api@example.com",
+		Name:            "API",
+		Role:            "user",
+		ProfileImageURL: "/user.png",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ok, err := users.UpdateUserAPIKeyByID(context.Background(), "user-api", "sk-test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !ok {
+		t.Fatal("expected api key update")
+	}
+
+	apiKey, err := users.GetUserAPIKeyByID(context.Background(), "user-api")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if apiKey != "sk-test" {
+		t.Fatalf("unexpected api key: %s", apiKey)
+	}
+
+	ok, err = users.DeleteUserAPIKeyByID(context.Background(), "user-api")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !ok {
+		t.Fatal("expected api key delete")
+	}
+}

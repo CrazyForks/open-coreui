@@ -25,6 +25,11 @@ type RuntimeConfig struct {
 	WebUIAuth                  bool
 	EnableInitialAdminSignup   bool
 	EnablePasswordAuth         bool
+	EnableAPIKeys              bool
+	EnableSignup               bool
+	DefaultUserRole            string
+	ShowAdminDetails           bool
+	AdminEmail                 string
 	WebUISecretKey             string
 	JWTExpiresIn               string
 	AuthCookieSameSite         string
@@ -85,6 +90,11 @@ func ConfigFromEnv() RuntimeConfig {
 		WebUIAuth:                  parseBoolEnv("WEBUI_AUTH", true),
 		EnableInitialAdminSignup:   parseBoolEnv("ENABLE_INITIAL_ADMIN_SIGNUP", false),
 		EnablePasswordAuth:         parseBoolEnv("ENABLE_PASSWORD_AUTH", true),
+		EnableAPIKeys:              parseBoolEnv("ENABLE_API_KEYS", true),
+		EnableSignup:               parseBoolEnv("ENABLE_SIGNUP", true),
+		DefaultUserRole:            firstNonEmpty(strings.TrimSpace(os.Getenv("DEFAULT_USER_ROLE")), "pending"),
+		ShowAdminDetails:           parseBoolEnv("SHOW_ADMIN_DETAILS", true),
+		AdminEmail:                 strings.TrimSpace(os.Getenv("ADMIN_EMAIL")),
 		WebUISecretKey:             firstNonEmpty(os.Getenv("WEBUI_SECRET_KEY"), "open-coreui-dev-secret"),
 		JWTExpiresIn:               firstNonEmpty(os.Getenv("JWT_EXPIRES_IN"), "4w"),
 		AuthCookieSameSite:         firstNonEmpty(os.Getenv("WEBUI_AUTH_COOKIE_SAME_SITE"), "Lax"),

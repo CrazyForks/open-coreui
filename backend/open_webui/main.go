@@ -49,6 +49,11 @@ func NewHandler(cfg RuntimeConfig) (http.Handler, error) {
 			WebUIAuth:                cfg.WebUIAuth,
 			EnableInitialAdminSignup: cfg.EnableInitialAdminSignup,
 			EnablePasswordAuth:       cfg.EnablePasswordAuth,
+			EnableAPIKeys:            cfg.EnableAPIKeys,
+			EnableSignup:             cfg.EnableSignup,
+			DefaultUserRole:          cfg.DefaultUserRole,
+			ShowAdminDetails:         cfg.ShowAdminDetails,
+			AdminEmail:               cfg.AdminEmail,
 			WebUISecretKey:           cfg.WebUISecretKey,
 			JWTExpiresIn:             cfg.JWTExpiresIn,
 			AuthCookieSameSite:       cfg.AuthCookieSameSite,
@@ -63,11 +68,33 @@ func NewHandler(cfg RuntimeConfig) (http.Handler, error) {
 		Config: routers.UsersRuntimeConfig{
 			WebUISecretKey: cfg.WebUISecretKey,
 			StaticDir:      cfg.StaticDir,
+			EnableAPIKeys:  cfg.EnableAPIKeys,
 		},
-		Users: usersTable,
-		Auths: authRouter.Auths,
+		Users:         usersTable,
+		Auths:         authRouter.Auths,
+		Groups:        models.NewGroupsTable(db),
+		OAuthSessions: models.NewOAuthSessionsTable(db),
 	}
 	usersRouter.Register(mux)
+	groupsTable := models.NewGroupsTable(db)
+	groupsRouter := &routers.GroupsRouter{
+		Config: routers.GroupsRuntimeConfig{
+			WebUISecretKey: cfg.WebUISecretKey,
+			EnableAPIKeys:  cfg.EnableAPIKeys,
+		},
+		Users:  usersTable,
+		Groups: groupsTable,
+	}
+	groupsRouter.Register(mux)
+	notesRouter := &routers.NotesRouter{
+		Config: routers.NotesRuntimeConfig{
+			WebUISecretKey: cfg.WebUISecretKey,
+			EnableAPIKeys:  cfg.EnableAPIKeys,
+		},
+		Users: usersTable,
+		Notes: models.NewNotesTable(db),
+	}
+	notesRouter.Register(mux)
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte("ok"))

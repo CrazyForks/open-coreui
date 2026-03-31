@@ -21,6 +21,26 @@ func Registered() []Definition {
 			Up:           versions.UpgradeV7E5B5DC7342BInit,
 		},
 		{
+			Revision:     versions.V922E7A387820Revision,
+			DownRevision: versions.V922E7A387820DownRevision,
+			Up:           versions.UpgradeV922E7A387820AddGroupTable,
+		},
+		{
+			Revision:     versions.V37F288994C47Revision,
+			DownRevision: versions.V37F288994C47DownRevision,
+			Up:           versions.UpgradeV37F288994C47AddGroupMemberTable,
+		},
+		{
+			Revision:     versions.V38D63C18F30FRevision,
+			DownRevision: versions.V38D63C18F30FDownRevision,
+			Up:           versions.UpgradeV38D63C18F30FAddOAuthSessionTable,
+		},
+		{
+			Revision:     versions.V9F0C9CD09105Revision,
+			DownRevision: versions.V9F0C9CD09105DownRevision,
+			Up:           versions.UpgradeV9F0C9CD09105AddNoteTable,
+		},
+		{
 			Revision:     versions.CA81BD47C050Revision,
 			DownRevision: versions.CA81BD47C050DownRevision,
 			Up:           versions.UpgradeCA81BD47C050AddConfigTable,

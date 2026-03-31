@@ -24,6 +24,7 @@ func TestUsersRouterInfoAndProfileImage(t *testing.T) {
 			WebUIAuth:                true,
 			EnableInitialAdminSignup: true,
 			EnablePasswordAuth:       true,
+			EnableAPIKeys:            true,
 			WebUISecretKey:           "secret",
 			JWTExpiresIn:             "1h",
 			AuthCookieSameSite:       "Lax",
@@ -38,10 +39,13 @@ func TestUsersRouterInfoAndProfileImage(t *testing.T) {
 	usersRouter := &UsersRouter{
 		Config: UsersRuntimeConfig{
 			WebUISecretKey: "secret",
-			StaticDir:      "open-webui/backend/open_webui/static",
+			StaticDir:      "/home/xxnuo/projects/open-coreui/open-webui/backend/open_webui/static",
+			EnableAPIKeys:  true,
 		},
-		Users: users,
-		Auths: auths,
+		Users:         users,
+		Auths:         auths,
+		Groups:        models.NewGroupsTable(db),
+		OAuthSessions: models.NewOAuthSessionsTable(db),
 	}
 
 	mux := http.NewServeMux()
@@ -68,8 +72,24 @@ func TestUsersRouterInfoAndProfileImage(t *testing.T) {
 	token, _ := signupPayload["token"].(string)
 	userID, _ := signupPayload["id"].(string)
 
+	apiKeyCreateReq := httptest.NewRequest(http.MethodPost, "/api/v1/auths/api_key", nil)
+	apiKeyCreateReq.Header.Set("Authorization", "Bearer "+token)
+	apiKeyCreateRes := httptest.NewRecorder()
+	mux.ServeHTTP(apiKeyCreateRes, apiKeyCreateReq)
+	if apiKeyCreateRes.Code != http.StatusOK {
+		t.Fatalf("unexpected api key create status: %d", apiKeyCreateRes.Code)
+	}
+	var apiKeyPayload map[string]any
+	if err := json.Unmarshal(apiKeyCreateRes.Body.Bytes(), &apiKeyPayload); err != nil {
+		t.Fatal(err)
+	}
+	apiKey, _ := apiKeyPayload["api_key"].(string)
+	if apiKey == "" {
+		t.Fatal("expected api key")
+	}
+
 	infoReq := httptest.NewRequest(http.MethodGet, "/api/v1/users/"+userID+"/info", nil)
-	infoReq.Header.Set("Authorization", "Bearer "+token)
+	infoReq.Header.Set("Authorization", "Bearer "+apiKey)
 	infoRes := httptest.NewRecorder()
 	mux.ServeHTTP(infoRes, infoReq)
 	if infoRes.Code != http.StatusOK {
@@ -82,6 +102,26 @@ func TestUsersRouterInfoAndProfileImage(t *testing.T) {
 	mux.ServeHTTP(imageRes, imageReq)
 	if imageRes.Code != http.StatusOK {
 		t.Fatalf("unexpected image status: %d", imageRes.Code)
+	}
+
+	faviconUpdateBody, _ := json.Marshal(map[string]any{
+		"name":              "Tester",
+		"profile_image_url": "/static/favicon.png",
+	})
+	faviconUpdateReq := httptest.NewRequest(http.MethodPost, "/api/v1/auths/update/profile", bytes.NewReader(faviconUpdateBody))
+	faviconUpdateReq.Header.Set("Authorization", "Bearer "+token)
+	faviconUpdateRes := httptest.NewRecorder()
+	mux.ServeHTTP(faviconUpdateRes, faviconUpdateReq)
+	if faviconUpdateRes.Code != http.StatusOK {
+		t.Fatalf("unexpected favicon profile update status: %d", faviconUpdateRes.Code)
+	}
+
+	faviconReq := httptest.NewRequest(http.MethodGet, "/api/v1/users/"+userID+"/profile/image", nil)
+	faviconReq.Header.Set("Authorization", "Bearer "+token)
+	faviconRes := httptest.NewRecorder()
+	mux.ServeHTTP(faviconRes, faviconReq)
+	if faviconRes.Code != http.StatusOK {
+		t.Fatalf("unexpected favicon image status: %d", faviconRes.Code)
 	}
 
 	settingsUpdateBody, _ := json.Marshal(map[string]any{
@@ -101,6 +141,30 @@ func TestUsersRouterInfoAndProfileImage(t *testing.T) {
 	mux.ServeHTTP(settingsRes, settingsReq)
 	if settingsRes.Code != http.StatusOK {
 		t.Fatalf("unexpected settings status: %d", settingsRes.Code)
+	}
+
+	listUsersReq := httptest.NewRequest(http.MethodGet, "/api/v1/users/?page=1", nil)
+	listUsersReq.Header.Set("Authorization", "Bearer "+token)
+	listUsersRes := httptest.NewRecorder()
+	mux.ServeHTTP(listUsersRes, listUsersReq)
+	if listUsersRes.Code != http.StatusOK {
+		t.Fatalf("unexpected list users status: %d", listUsersRes.Code)
+	}
+
+	allUsersReq := httptest.NewRequest(http.MethodGet, "/api/v1/users/all", nil)
+	allUsersReq.Header.Set("Authorization", "Bearer "+token)
+	allUsersRes := httptest.NewRecorder()
+	mux.ServeHTTP(allUsersRes, allUsersReq)
+	if allUsersRes.Code != http.StatusOK {
+		t.Fatalf("unexpected all users status: %d", allUsersRes.Code)
+	}
+
+	searchUsersReq := httptest.NewRequest(http.MethodGet, "/api/v1/users/search?query=tester", nil)
+	searchUsersReq.Header.Set("Authorization", "Bearer "+token)
+	searchUsersRes := httptest.NewRecorder()
+	mux.ServeHTTP(searchUsersRes, searchUsersReq)
+	if searchUsersRes.Code != http.StatusOK {
+		t.Fatalf("unexpected search users status: %d", searchUsersRes.Code)
 	}
 
 	statusUpdateBody, _ := json.Marshal(map[string]any{
@@ -143,6 +207,14 @@ func TestUsersRouterInfoAndProfileImage(t *testing.T) {
 		t.Fatalf("unexpected info status: %d", infoResSession.Code)
 	}
 
+	sessionGroupsReq := httptest.NewRequest(http.MethodGet, "/api/v1/users/groups", nil)
+	sessionGroupsReq.Header.Set("Authorization", "Bearer "+token)
+	sessionGroupsRes := httptest.NewRecorder()
+	mux.ServeHTTP(sessionGroupsRes, sessionGroupsReq)
+	if sessionGroupsRes.Code != http.StatusOK {
+		t.Fatalf("unexpected session groups status: %d", sessionGroupsRes.Code)
+	}
+
 	secondSignupBody, _ := json.Marshal(map[string]any{
 		"name":              "Tester Two",
 		"email":             "tester2@example.com",
@@ -161,6 +233,22 @@ func TestUsersRouterInfoAndProfileImage(t *testing.T) {
 		t.Fatal(err)
 	}
 	secondUserID, _ := secondSignupPayload["id"].(string)
+
+	_, err := usersRouter.OAuthSessions.CreateSession(secondSignupReq.Context(), secondUserID, "google", map[string]any{
+		"access_token": "token",
+		"expires_at":   float64(123456789),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	oauthSessionsReq := httptest.NewRequest(http.MethodGet, "/api/v1/users/"+secondUserID+"/oauth/sessions", nil)
+	oauthSessionsReq.Header.Set("Authorization", "Bearer "+token)
+	oauthSessionsRes := httptest.NewRecorder()
+	mux.ServeHTTP(oauthSessionsRes, oauthSessionsReq)
+	if oauthSessionsRes.Code != http.StatusOK {
+		t.Fatalf("unexpected oauth sessions status: %d", oauthSessionsRes.Code)
+	}
 
 	updateBody, _ := json.Marshal(map[string]any{
 		"role":              "user",
@@ -185,12 +273,27 @@ func TestUsersRouterInfoAndProfileImage(t *testing.T) {
 		t.Fatalf("unexpected get user status: %d", getRes.Code)
 	}
 
+	userGroupsReq := httptest.NewRequest(http.MethodGet, "/api/v1/users/"+secondUserID+"/groups", nil)
+	userGroupsReq.Header.Set("Authorization", "Bearer "+token)
+	userGroupsRes := httptest.NewRecorder()
+	mux.ServeHTTP(userGroupsRes, userGroupsReq)
+	if userGroupsRes.Code != http.StatusOK {
+		t.Fatalf("unexpected user groups status: %d", userGroupsRes.Code)
+	}
+
 	activeReq := httptest.NewRequest(http.MethodGet, "/api/v1/users/"+secondUserID+"/active", nil)
 	activeReq.Header.Set("Authorization", "Bearer "+token)
 	activeRes := httptest.NewRecorder()
 	mux.ServeHTTP(activeRes, activeReq)
 	if activeRes.Code != http.StatusOK {
 		t.Fatalf("unexpected active status code: %d", activeRes.Code)
+	}
+	var activePayload map[string]bool
+	if err := json.Unmarshal(activeRes.Body.Bytes(), &activePayload); err != nil {
+		t.Fatal(err)
+	}
+	if !activePayload["active"] {
+		t.Fatal("expected second user to be active")
 	}
 
 	deleteReq := httptest.NewRequest(http.MethodDelete, "/api/v1/users/"+secondUserID, nil)

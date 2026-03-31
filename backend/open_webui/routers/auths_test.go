@@ -46,6 +46,10 @@ func TestAuthsRouterSignupAndSignin(t *testing.T) {
 			WebUIAuth:                true,
 			EnableInitialAdminSignup: true,
 			EnablePasswordAuth:       true,
+			EnableAPIKeys:            true,
+			EnableSignup:             true,
+			DefaultUserRole:          "pending",
+			ShowAdminDetails:         true,
 			WebUISecretKey:           "secret",
 			JWTExpiresIn:             "1h",
 			AuthCookieSameSite:       "Lax",
@@ -153,5 +157,76 @@ func TestAuthsRouterSignupAndSignin(t *testing.T) {
 	mux.ServeHTTP(signinNewRes, signinNewReq)
 	if signinNewRes.Code != http.StatusOK {
 		t.Fatalf("unexpected signin with new password status: %d", signinNewRes.Code)
+	}
+
+	apiKeyCreateReq := httptest.NewRequest(http.MethodPost, "/api/v1/auths/api_key", nil)
+	apiKeyCreateReq.Header.Set("Authorization", "Bearer "+token)
+	apiKeyCreateRes := httptest.NewRecorder()
+	mux.ServeHTTP(apiKeyCreateRes, apiKeyCreateReq)
+	if apiKeyCreateRes.Code != http.StatusOK {
+		t.Fatalf("unexpected api key create status: %d", apiKeyCreateRes.Code)
+	}
+
+	apiKeyGetReq := httptest.NewRequest(http.MethodGet, "/api/v1/auths/api_key", nil)
+	apiKeyGetReq.Header.Set("Authorization", "Bearer "+token)
+	apiKeyGetRes := httptest.NewRecorder()
+	mux.ServeHTTP(apiKeyGetRes, apiKeyGetReq)
+	if apiKeyGetRes.Code != http.StatusOK {
+		t.Fatalf("unexpected api key get status: %d", apiKeyGetRes.Code)
+	}
+	var apiKeyPayload map[string]any
+	if err := json.Unmarshal(apiKeyGetRes.Body.Bytes(), &apiKeyPayload); err != nil {
+		t.Fatal(err)
+	}
+	apiKey, _ := apiKeyPayload["api_key"].(string)
+	if apiKey == "" {
+		t.Fatal("expected api key")
+	}
+
+	sessionByAPIKeyReq := httptest.NewRequest(http.MethodGet, "/api/v1/auths/", nil)
+	sessionByAPIKeyReq.Header.Set("Authorization", "Bearer "+apiKey)
+	sessionByAPIKeyRes := httptest.NewRecorder()
+	mux.ServeHTTP(sessionByAPIKeyRes, sessionByAPIKeyReq)
+	if sessionByAPIKeyRes.Code != http.StatusOK {
+		t.Fatalf("unexpected api key session status: %d", sessionByAPIKeyRes.Code)
+	}
+
+	apiKeyDeleteReq := httptest.NewRequest(http.MethodDelete, "/api/v1/auths/api_key", nil)
+	apiKeyDeleteReq.Header.Set("Authorization", "Bearer "+token)
+	apiKeyDeleteRes := httptest.NewRecorder()
+	mux.ServeHTTP(apiKeyDeleteRes, apiKeyDeleteReq)
+	if apiKeyDeleteRes.Code != http.StatusOK {
+		t.Fatalf("unexpected api key delete status: %d", apiKeyDeleteRes.Code)
+	}
+
+	addUserBody, _ := json.Marshal(map[string]any{
+		"name":              "Added User",
+		"email":             "added@example.com",
+		"password":          "password-123",
+		"profile_image_url": "/user.png",
+		"role":              "user",
+	})
+	addUserReq := httptest.NewRequest(http.MethodPost, "/api/v1/auths/add", bytes.NewReader(addUserBody))
+	addUserReq.Header.Set("Authorization", "Bearer "+token)
+	addUserRes := httptest.NewRecorder()
+	mux.ServeHTTP(addUserRes, addUserReq)
+	if addUserRes.Code != http.StatusOK {
+		t.Fatalf("unexpected add user status: %d", addUserRes.Code)
+	}
+
+	adminDetailsReq := httptest.NewRequest(http.MethodGet, "/api/v1/auths/admin/details", nil)
+	adminDetailsReq.Header.Set("Authorization", "Bearer "+token)
+	adminDetailsRes := httptest.NewRecorder()
+	mux.ServeHTTP(adminDetailsRes, adminDetailsReq)
+	if adminDetailsRes.Code != http.StatusOK {
+		t.Fatalf("unexpected admin details status: %d", adminDetailsRes.Code)
+	}
+
+	adminConfigReq := httptest.NewRequest(http.MethodGet, "/api/v1/auths/admin/config", nil)
+	adminConfigReq.Header.Set("Authorization", "Bearer "+token)
+	adminConfigRes := httptest.NewRecorder()
+	mux.ServeHTTP(adminConfigRes, adminConfigReq)
+	if adminConfigRes.Code != http.StatusOK {
+		t.Fatalf("unexpected admin config status: %d", adminConfigRes.Code)
 	}
 }

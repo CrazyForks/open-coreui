@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -16,12 +18,15 @@ import (
 type UsersRuntimeConfig struct {
 	WebUISecretKey string
 	StaticDir      string
+	EnableAPIKeys  bool
 }
 
 type UsersRouter struct {
-	Config UsersRuntimeConfig
-	Users  *models.UsersTable
-	Auths  *models.AuthsTable
+	Config        UsersRuntimeConfig
+	Users         *models.UsersTable
+	Auths         *models.AuthsTable
+	Groups        *models.GroupsTable
+	OAuthSessions *models.OAuthSessionsTable
 }
 
 type userInfoResponse struct {
@@ -32,6 +37,20 @@ type userInfoResponse struct {
 	ProfileImageURL string `json:"profile_image_url"`
 	IsActive        bool   `json:"is_active"`
 	Groups          []any  `json:"groups"`
+}
+
+type userGroupIDsResponse struct {
+	ID              string   `json:"id"`
+	Email           string   `json:"email"`
+	Name            string   `json:"name"`
+	Role            string   `json:"role"`
+	ProfileImageURL string   `json:"profile_image_url"`
+	GroupIDs        []string `json:"group_ids"`
+}
+
+type userListResponse struct {
+	Users []any `json:"users"`
+	Total int   `json:"total"`
 }
 
 type userActiveResponse struct {
@@ -76,6 +95,10 @@ type userStatusForm struct {
 }
 
 func (h *UsersRouter) Register(mux *http.ServeMux) {
+	mux.HandleFunc("GET /api/v1/users/", h.ListUsers)
+	mux.HandleFunc("GET /api/v1/users/all", h.GetAllUsers)
+	mux.HandleFunc("GET /api/v1/users/search", h.SearchUsers)
+	mux.HandleFunc("GET /api/v1/users/groups", h.GetSessionUserGroups)
 	mux.HandleFunc("GET /api/v1/users/user/settings", h.GetSessionUserSettings)
 	mux.HandleFunc("POST /api/v1/users/user/settings/update", h.UpdateSessionUserSettings)
 	mux.HandleFunc("GET /api/v1/users/user/status", h.GetSessionUserStatus)
@@ -84,10 +107,98 @@ func (h *UsersRouter) Register(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/v1/users/user/info/update", h.UpdateSessionUserInfo)
 	mux.HandleFunc("GET /api/v1/users/{user_id}", h.GetUserByID)
 	mux.HandleFunc("GET /api/v1/users/{user_id}/active", h.GetUserActiveStatusByID)
+	mux.HandleFunc("GET /api/v1/users/{user_id}/groups", h.GetUserGroupsByID)
+	mux.HandleFunc("GET /api/v1/users/{user_id}/oauth/sessions", h.GetUserOAuthSessionsByID)
 	mux.HandleFunc("POST /api/v1/users/{user_id}/update", h.UpdateUserByID)
 	mux.HandleFunc("DELETE /api/v1/users/{user_id}", h.DeleteUserByID)
 	mux.HandleFunc("GET /api/v1/users/{user_id}/info", h.GetUserInfoByID)
 	mux.HandleFunc("GET /api/v1/users/{user_id}/profile/image", h.GetUserProfileImageByID)
+}
+
+func (h *UsersRouter) ListUsers(w http.ResponseWriter, r *http.Request) {
+	if _, ok := h.requireAdminUser(w, r); !ok {
+		return
+	}
+
+	page := parseIntQuery(r, "page", 1)
+	if page < 1 {
+		page = 1
+	}
+	limit := 30
+	skip := (page - 1) * limit
+	users, total, err := h.Users.GetUsers(r.Context(), models.UserListOptions{
+		Query:     r.URL.Query().Get("query"),
+		OrderBy:   r.URL.Query().Get("order_by"),
+		Direction: r.URL.Query().Get("direction"),
+		Skip:      skip,
+		Limit:     limit,
+	})
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"detail": err.Error()})
+		return
+	}
+
+	result := make([]any, 0, len(users))
+	for _, user := range users {
+		groupIDs := h.getUserGroupIDs(r, user.ID)
+		result = append(result, userGroupIDsResponse{
+			ID:              user.ID,
+			Email:           user.Email,
+			Name:            user.Name,
+			Role:            user.Role,
+			ProfileImageURL: user.ProfileImageURL,
+			GroupIDs:        groupIDs,
+		})
+	}
+	writeJSON(w, http.StatusOK, userListResponse{Users: result, Total: total})
+}
+
+func (h *UsersRouter) GetAllUsers(w http.ResponseWriter, r *http.Request) {
+	if _, ok := h.requireAdminUser(w, r); !ok {
+		return
+	}
+	h.writeUserSearchResult(w, r, models.UserListOptions{})
+}
+
+func (h *UsersRouter) SearchUsers(w http.ResponseWriter, r *http.Request) {
+	if _, ok := h.requireVerifiedUser(w, r); !ok {
+		return
+	}
+	page := parseIntQuery(r, "page", 1)
+	if page < 1 {
+		page = 1
+	}
+	limit := 30
+	skip := (page - 1) * limit
+	h.writeUserSearchResult(w, r, models.UserListOptions{
+		Query:     r.URL.Query().Get("query"),
+		OrderBy:   r.URL.Query().Get("order_by"),
+		Direction: r.URL.Query().Get("direction"),
+		Skip:      skip,
+		Limit:     limit,
+	})
+}
+
+func (h *UsersRouter) GetSessionUserGroups(w http.ResponseWriter, r *http.Request) {
+	user, ok := h.requireVerifiedUser(w, r)
+	if !ok {
+		return
+	}
+	if h.Groups == nil {
+		writeJSON(w, http.StatusOK, []groupResponse{})
+		return
+	}
+	groups, err := h.Groups.GetGroupsByMemberID(r.Context(), user.ID)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"detail": err.Error()})
+		return
+	}
+	response := make([]groupResponse, 0, len(groups))
+	for _, group := range groups {
+		memberCount, _ := h.Groups.GetGroupMemberCountByID(r.Context(), group.ID)
+		response = append(response, serializeGroup(group, memberCount))
+	}
+	writeJSON(w, http.StatusOK, response)
 }
 
 func (h *UsersRouter) GetSessionUserSettings(w http.ResponseWriter, r *http.Request) {
@@ -210,8 +321,8 @@ func (h *UsersRouter) GetUserInfoByID(w http.ResponseWriter, r *http.Request) {
 		Email:           user.Email,
 		Role:            user.Role,
 		ProfileImageURL: user.ProfileImageURL,
-		IsActive:        false,
-		Groups:          []any{},
+		IsActive:        models.IsActive(user),
+		Groups:          h.getUserGroups(r, user.ID),
 	})
 }
 
@@ -243,7 +354,13 @@ func (h *UsersRouter) GetUserActiveStatusByID(w http.ResponseWriter, r *http.Req
 	if _, ok := h.requireVerifiedUser(w, r); !ok {
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]bool{"active": false})
+	userID := r.PathValue("user_id")
+	active, err := h.Users.IsUserActive(r.Context(), userID)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"detail": err.Error()})
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]bool{"active": active})
 }
 
 func (h *UsersRouter) GetUserProfileImageByID(w http.ResponseWriter, r *http.Request) {
@@ -282,7 +399,14 @@ func (h *UsersRouter) GetUserProfileImageByID(w http.ResponseWriter, r *http.Req
 		_, _ = io.Copy(w, bytes.NewReader(imageData))
 		return
 	default:
-		http.ServeFile(w, r, filepath.Join(h.Config.StaticDir, "user.png"))
+		profilePath := filepath.Join(h.Config.StaticDir, "user.png")
+		if strings.TrimSpace(user.ProfileImageURL) == "/static/favicon.png" {
+			profilePath = filepath.Join(h.Config.StaticDir, "favicon.png")
+		}
+		if _, err := os.Stat(profilePath); err != nil {
+			profilePath = filepath.Join(h.Config.StaticDir, "user.png")
+		}
+		http.ServeFile(w, r, profilePath)
 	}
 }
 
@@ -415,11 +539,65 @@ func (h *UsersRouter) DeleteUserByID(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, true)
 }
 
+func (h *UsersRouter) GetUserGroupsByID(w http.ResponseWriter, r *http.Request) {
+	if _, ok := h.requireAdminUser(w, r); !ok {
+		return
+	}
+	groups, err := h.Groups.GetGroupsByMemberID(r.Context(), r.PathValue("user_id"))
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"detail": err.Error()})
+		return
+	}
+	response := make([]groupResponse, 0, len(groups))
+	for _, group := range groups {
+		memberCount, _ := h.Groups.GetGroupMemberCountByID(r.Context(), group.ID)
+		response = append(response, serializeGroup(group, memberCount))
+	}
+	writeJSON(w, http.StatusOK, response)
+}
+
+func (h *UsersRouter) GetUserOAuthSessionsByID(w http.ResponseWriter, r *http.Request) {
+	if _, ok := h.requireAdminUser(w, r); !ok {
+		return
+	}
+	if h.OAuthSessions == nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"detail": "user not found"})
+		return
+	}
+	sessions, err := h.OAuthSessions.GetSessionsByUserID(r.Context(), r.PathValue("user_id"))
+	if err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"detail": err.Error()})
+		return
+	}
+	if len(sessions) == 0 {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"detail": "user not found"})
+		return
+	}
+	writeJSON(w, http.StatusOK, sessions)
+}
+
 func (h *UsersRouter) requireVerifiedUser(w http.ResponseWriter, r *http.Request) (*models.User, bool) {
 	token := utils.ExtractTokenFromRequest(r)
 	if token == "" {
 		writeJSON(w, http.StatusUnauthorized, map[string]string{"detail": "invalid token"})
 		return nil, false
+	}
+
+	if strings.HasPrefix(token, "sk-") {
+		if !h.Config.EnableAPIKeys {
+			writeJSON(w, http.StatusForbidden, map[string]string{"detail": "api key not allowed"})
+			return nil, false
+		}
+		user, err := h.Users.GetUserByAPIKey(r.Context(), token)
+		if err != nil {
+			writeJSON(w, http.StatusInternalServerError, map[string]string{"detail": err.Error()})
+			return nil, false
+		}
+		if user == nil {
+			writeJSON(w, http.StatusUnauthorized, map[string]string{"detail": "invalid token"})
+			return nil, false
+		}
+		return user, true
 	}
 
 	claims, err := utils.DecodeToken(h.Config.WebUISecretKey, token)
@@ -435,6 +613,18 @@ func (h *UsersRouter) requireVerifiedUser(w http.ResponseWriter, r *http.Request
 	}
 	if user == nil {
 		writeJSON(w, http.StatusUnauthorized, map[string]string{"detail": "invalid token"})
+		return nil, false
+	}
+	return user, true
+}
+
+func (h *UsersRouter) requireAdminUser(w http.ResponseWriter, r *http.Request) (*models.User, bool) {
+	user, ok := h.requireVerifiedUser(w, r)
+	if !ok {
+		return nil, false
+	}
+	if user.Role != "admin" {
+		writeJSON(w, http.StatusForbidden, map[string]string{"detail": "action prohibited"})
 		return nil, false
 	}
 	return user, true
@@ -465,6 +655,72 @@ func serializeUser(user *models.User) userActiveResponse {
 		UpdatedAt:             user.UpdatedAt,
 		CreatedAt:             user.CreatedAt,
 		Groups:                []any{},
-		IsActive:              false,
+		IsActive:              models.IsActive(user),
 	}
+}
+
+func (h *UsersRouter) getUserGroups(r *http.Request, userID string) []any {
+	if h.Groups == nil {
+		return []any{}
+	}
+	groups, err := h.Groups.GetGroupsByMemberID(r.Context(), userID)
+	if err != nil {
+		return []any{}
+	}
+	result := make([]any, 0, len(groups))
+	for _, group := range groups {
+		result = append(result, map[string]any{
+			"id":   group.ID,
+			"name": group.Name,
+		})
+	}
+	return result
+}
+
+func (h *UsersRouter) getUserGroupIDs(r *http.Request, userID string) []string {
+	if h.Groups == nil {
+		return []string{}
+	}
+	groups, err := h.Groups.GetGroupsByMemberID(r.Context(), userID)
+	if err != nil {
+		return []string{}
+	}
+	result := make([]string, 0, len(groups))
+	for _, group := range groups {
+		result = append(result, group.ID)
+	}
+	return result
+}
+
+func (h *UsersRouter) writeUserSearchResult(w http.ResponseWriter, r *http.Request, options models.UserListOptions) {
+	users, total, err := h.Users.GetUsers(r.Context(), options)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"detail": err.Error()})
+		return
+	}
+	result := make([]any, 0, len(users))
+	for _, user := range users {
+		result = append(result, userInfoResponse{
+			ID:              user.ID,
+			Name:            user.Name,
+			Email:           user.Email,
+			Role:            user.Role,
+			ProfileImageURL: user.ProfileImageURL,
+			IsActive:        models.IsActive(&user),
+			Groups:          h.getUserGroups(r, user.ID),
+		})
+	}
+	writeJSON(w, http.StatusOK, userListResponse{Users: result, Total: total})
+}
+
+func parseIntQuery(r *http.Request, key string, fallback int) int {
+	value := strings.TrimSpace(r.URL.Query().Get(key))
+	if value == "" {
+		return fallback
+	}
+	var parsed int
+	if _, err := fmt.Sscanf(value, "%d", &parsed); err != nil {
+		return fallback
+	}
+	return parsed
 }
