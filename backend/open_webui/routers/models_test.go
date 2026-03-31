@@ -47,8 +47,10 @@ func TestModelsRouterCRUD(t *testing.T) {
 			EnableAPIKeys:  true,
 			StaticDir:      "/home/xxnuo/projects/open-coreui/open-webui/backend/open_webui/static",
 		},
-		Users:  users,
-		Models: modelsTable,
+		Users:        users,
+		Models:       modelsTable,
+		Groups:       models.NewGroupsTable(db),
+		AccessGrants: models.NewAccessGrantsTable(db),
 	}
 
 	mux := http.NewServeMux()
@@ -179,6 +181,24 @@ func TestModelsRouterCRUD(t *testing.T) {
 	mux.ServeHTTP(updateRes, updateReq)
 	if updateRes.Code != http.StatusOK {
 		t.Fatalf("unexpected update model status: %d", updateRes.Code)
+	}
+
+	accessBody, _ := json.Marshal(map[string]any{
+		"id": "model-1",
+		"access_grants": []map[string]any{
+			{
+				"principal_type": "user",
+				"principal_id":   "*",
+				"permission":     "read",
+			},
+		},
+	})
+	accessReq := httptest.NewRequest(http.MethodPost, "/api/v1/models/model/access/update", bytes.NewReader(accessBody))
+	accessReq.Header.Set("Authorization", "Bearer "+token)
+	accessRes := httptest.NewRecorder()
+	mux.ServeHTTP(accessRes, accessReq)
+	if accessRes.Code != http.StatusOK {
+		t.Fatalf("unexpected model access update status: %d", accessRes.Code)
 	}
 
 	deleteBody, _ := json.Marshal(map[string]any{"id": "model-1"})

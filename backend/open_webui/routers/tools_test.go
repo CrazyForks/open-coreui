@@ -46,8 +46,10 @@ func TestToolsRouterCRUD(t *testing.T) {
 			WebUISecretKey: "secret",
 			EnableAPIKeys:  true,
 		},
-		Users: users,
-		Tools: toolsTable,
+		Users:        users,
+		Tools:        toolsTable,
+		Groups:       models.NewGroupsTable(db),
+		AccessGrants: models.NewAccessGrantsTable(db),
 	}
 
 	mux := http.NewServeMux()
@@ -129,6 +131,23 @@ func TestToolsRouterCRUD(t *testing.T) {
 	mux.ServeHTTP(updateRes, updateReq)
 	if updateRes.Code != http.StatusOK {
 		t.Fatalf("unexpected update tool status: %d", updateRes.Code)
+	}
+
+	accessBody, _ := json.Marshal(map[string]any{
+		"access_grants": []map[string]any{
+			{
+				"principal_type": "user",
+				"principal_id":   "*",
+				"permission":     "read",
+			},
+		},
+	})
+	accessReq := httptest.NewRequest(http.MethodPost, "/api/v1/tools/id/tool_one/access/update", bytes.NewReader(accessBody))
+	accessReq.Header.Set("Authorization", "Bearer "+token)
+	accessRes := httptest.NewRecorder()
+	mux.ServeHTTP(accessRes, accessReq)
+	if accessRes.Code != http.StatusOK {
+		t.Fatalf("unexpected tool access update status: %d", accessRes.Code)
 	}
 
 	deleteReq := httptest.NewRequest(http.MethodDelete, "/api/v1/tools/id/tool_one/delete", nil)

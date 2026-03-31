@@ -30,6 +30,7 @@ type ConfigRecord struct {
 type ConfigStore struct {
 	runtime RuntimeConfig
 	db      *dbinternal.Handle
+	ownsDB  bool
 }
 
 func NewConfigStore(ctx context.Context, runtime RuntimeConfig) (*ConfigStore, error) {
@@ -49,12 +50,24 @@ func NewConfigStore(ctx context.Context, runtime RuntimeConfig) (*ConfigStore, e
 		return nil, err
 	}
 
+	return newConfigStore(ctx, runtime, dbHandle, true, runtime.EnableDBMigrations)
+}
+
+func NewConfigStoreWithHandle(ctx context.Context, runtime RuntimeConfig, dbHandle *dbinternal.Handle) (*ConfigStore, error) {
+	if err := os.MkdirAll(runtime.DataDir, 0o755); err != nil {
+		return nil, err
+	}
+	return newConfigStore(ctx, runtime, dbHandle, false, false)
+}
+
+func newConfigStore(ctx context.Context, runtime RuntimeConfig, dbHandle *dbinternal.Handle, ownsDB bool, runMigrations bool) (*ConfigStore, error) {
 	store := &ConfigStore{
 		runtime: runtime,
 		db:      dbHandle,
+		ownsDB:  ownsDB,
 	}
 
-	if runtime.EnableDBMigrations {
+	if runMigrations {
 		if err := migrations.Run(ctx, dbHandle); err != nil {
 			_ = store.Close()
 			return nil, err
@@ -70,7 +83,7 @@ func NewConfigStore(ctx context.Context, runtime RuntimeConfig) (*ConfigStore, e
 }
 
 func (s *ConfigStore) Close() error {
-	if s == nil || s.db == nil {
+	if s == nil || s.db == nil || !s.ownsDB {
 		return nil
 	}
 	return s.db.Close()

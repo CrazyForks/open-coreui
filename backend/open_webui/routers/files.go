@@ -18,10 +18,12 @@ type FilesRuntimeConfig struct {
 }
 
 type FilesRouter struct {
-	Config  FilesRuntimeConfig
-	Users   *models.UsersTable
-	Files   *models.FilesTable
-	Storage storage.Provider
+	Config       FilesRuntimeConfig
+	Users        *models.UsersTable
+	Files        *models.FilesTable
+	Groups       *models.GroupsTable
+	AccessGrants *models.AccessGrantsTable
+	Storage      storage.Provider
 }
 
 type fileListResponse struct {
@@ -29,11 +31,22 @@ type fileListResponse struct {
 	Total int           `json:"total"`
 }
 
+type fileAccessResponse struct {
+	models.File
+	WriteAccess  bool                 `json:"write_access"`
+	AccessGrants []models.AccessGrant `json:"access_grants,omitempty"`
+}
+
+type fileAccessGrantsForm struct {
+	AccessGrants []map[string]any `json:"access_grants"`
+}
+
 func (h *FilesRouter) Register(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/v1/files/", h.UploadFile)
 	mux.HandleFunc("GET /api/v1/files/", h.GetFiles)
 	mux.HandleFunc("GET /api/v1/files/search", h.SearchFiles)
 	mux.HandleFunc("GET /api/v1/files/{id}", h.GetFileByID)
+	mux.HandleFunc("POST /api/v1/files/{id}/access/update", h.UpdateFileAccessByID)
 	mux.HandleFunc("GET /api/v1/files/{id}/content", h.GetFileContentByID)
 	mux.HandleFunc("DELETE /api/v1/files/{id}", h.DeleteFileByID)
 	mux.HandleFunc("DELETE /api/v1/files/all", h.DeleteAllFiles)
@@ -84,7 +97,7 @@ func (h *FilesRouter) UploadFile(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"detail": err.Error()})
 		return
 	}
-	writeJSON(w, http.StatusOK, fileModel)
+	writeJSON(w, http.StatusOK, h.serializeFile(r, *fileModel, user))
 }
 
 func (h *FilesRouter) GetFiles(w http.ResponseWriter, r *http.Request) {
@@ -98,12 +111,13 @@ func (h *FilesRouter) GetFiles(w http.ResponseWriter, r *http.Request) {
 	}
 	limit := 50
 	skip := (page - 1) * limit
-	items, total, err := h.Files.GetFileList(r.Context(), models.FileListOptions{UserID: user.ID, Skip: skip, Limit: limit})
+	items, _, err := h.Files.GetFileList(r.Context(), models.FileListOptions{Skip: skip, Limit: limit})
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"detail": err.Error()})
 		return
 	}
-	writeJSON(w, http.StatusOK, fileListResponse{Items: items, Total: total})
+	filtered := h.filterReadableFiles(r, items, user)
+	writeJSON(w, http.StatusOK, fileListResponse{Items: extractFiles(filtered), Total: len(filtered)})
 }
 
 func (h *FilesRouter) SearchFiles(w http.ResponseWriter, r *http.Request) {
@@ -111,12 +125,12 @@ func (h *FilesRouter) SearchFiles(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	items, _, err := h.Files.GetFileList(r.Context(), models.FileListOptions{UserID: user.ID, Query: r.URL.Query().Get("query"), Limit: 100})
+	items, _, err := h.Files.GetFileList(r.Context(), models.FileListOptions{Query: r.URL.Query().Get("query"), Limit: 100})
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"detail": err.Error()})
 		return
 	}
-	writeJSON(w, http.StatusOK, items)
+	writeJSON(w, http.StatusOK, extractFiles(h.filterReadableFiles(r, items, user)))
 }
 
 func (h *FilesRouter) GetFileByID(w http.ResponseWriter, r *http.Request) {
@@ -124,16 +138,47 @@ func (h *FilesRouter) GetFileByID(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	file, err := h.Files.GetFileByIDAndUserID(r.Context(), r.PathValue("id"), user.ID)
+	file, err := h.Files.GetFileByID(r.Context(), r.PathValue("id"))
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"detail": err.Error()})
 		return
 	}
-	if file == nil {
+	if file == nil || !h.canReadFile(r, user, file) {
 		writeJSON(w, http.StatusNotFound, map[string]string{"detail": "not found"})
 		return
 	}
-	writeJSON(w, http.StatusOK, file)
+	writeJSON(w, http.StatusOK, h.serializeFile(r, *file, user))
+}
+
+func (h *FilesRouter) UpdateFileAccessByID(w http.ResponseWriter, r *http.Request) {
+	user, ok := h.requireVerifiedUser(w, r)
+	if !ok {
+		return
+	}
+	current, err := h.Files.GetFileByID(r.Context(), r.PathValue("id"))
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"detail": err.Error()})
+		return
+	}
+	if current == nil || !h.canWriteFile(r, user, current) {
+		writeJSON(w, http.StatusNotFound, map[string]string{"detail": "not found"})
+		return
+	}
+	var form fileAccessGrantsForm
+	if err := json.NewDecoder(r.Body).Decode(&form); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"detail": "invalid request body"})
+		return
+	}
+	if err := h.AccessGrants.SetAccessGrants(r.Context(), "file", current.ID, form.AccessGrants); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"detail": err.Error()})
+		return
+	}
+	updated, err := h.Files.GetFileByID(r.Context(), current.ID)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"detail": err.Error()})
+		return
+	}
+	writeJSON(w, http.StatusOK, h.serializeFile(r, *updated, user))
 }
 
 func (h *FilesRouter) GetFileContentByID(w http.ResponseWriter, r *http.Request) {
@@ -141,12 +186,12 @@ func (h *FilesRouter) GetFileContentByID(w http.ResponseWriter, r *http.Request)
 	if !ok {
 		return
 	}
-	file, err := h.Files.GetFileByIDAndUserID(r.Context(), r.PathValue("id"), user.ID)
+	file, err := h.Files.GetFileByID(r.Context(), r.PathValue("id"))
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"detail": err.Error()})
 		return
 	}
-	if file == nil {
+	if file == nil || !h.canReadFile(r, user, file) {
 		writeJSON(w, http.StatusNotFound, map[string]string{"detail": "not found"})
 		return
 	}
@@ -163,12 +208,12 @@ func (h *FilesRouter) DeleteFileByID(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	file, err := h.Files.GetFileByIDAndUserID(r.Context(), r.PathValue("id"), user.ID)
+	file, err := h.Files.GetFileByID(r.Context(), r.PathValue("id"))
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"detail": err.Error()})
 		return
 	}
-	if file == nil {
+	if file == nil || !h.canWriteFile(r, user, file) {
 		writeJSON(w, http.StatusNotFound, map[string]string{"detail": "not found"})
 		return
 	}
@@ -189,12 +234,15 @@ func (h *FilesRouter) DeleteAllFiles(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	items, _, err := h.Files.GetFileList(r.Context(), models.FileListOptions{UserID: user.ID, Limit: 10000})
+	items, _, err := h.Files.GetFileList(r.Context(), models.FileListOptions{Limit: 10000})
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"detail": err.Error()})
 		return
 	}
 	for _, file := range items {
+		if !h.canWriteFile(r, user, &file) {
+			continue
+		}
 		if err := h.Storage.DeleteFile(file.Path); err != nil {
 			writeJSON(w, http.StatusBadRequest, map[string]string{"detail": err.Error()})
 			return
@@ -243,4 +291,74 @@ func (h *FilesRouter) requireVerifiedUser(w http.ResponseWriter, r *http.Request
 	}
 	writeJSON(w, http.StatusUnauthorized, map[string]string{"detail": "invalid token"})
 	return nil, false
+}
+
+func (h *FilesRouter) userGroupIDs(r *http.Request, userID string) []string {
+	if h.Groups == nil {
+		return nil
+	}
+	groups, err := h.Groups.GetGroupsByMemberID(r.Context(), userID)
+	if err != nil {
+		return nil
+	}
+	ids := make([]string, 0, len(groups))
+	for _, group := range groups {
+		ids = append(ids, group.ID)
+	}
+	return ids
+}
+
+func (h *FilesRouter) canReadFile(r *http.Request, user *models.User, file *models.File) bool {
+	if user.Role == "admin" || file.UserID == user.ID {
+		return true
+	}
+	if h.AccessGrants == nil {
+		return false
+	}
+	allowed, err := h.AccessGrants.HasAccess(r.Context(), user.ID, "file", file.ID, "read", h.userGroupIDs(r, user.ID))
+	return err == nil && allowed
+}
+
+func (h *FilesRouter) canWriteFile(r *http.Request, user *models.User, file *models.File) bool {
+	if user.Role == "admin" || file.UserID == user.ID {
+		return true
+	}
+	if h.AccessGrants == nil {
+		return false
+	}
+	allowed, err := h.AccessGrants.HasAccess(r.Context(), user.ID, "file", file.ID, "write", h.userGroupIDs(r, user.ID))
+	return err == nil && allowed
+}
+
+func (h *FilesRouter) serializeFile(r *http.Request, file models.File, user *models.User) fileAccessResponse {
+	grants := []models.AccessGrant{}
+	if h.AccessGrants != nil {
+		loaded, err := h.AccessGrants.GetGrantsByResource(r.Context(), "file", file.ID)
+		if err == nil {
+			grants = loaded
+		}
+	}
+	return fileAccessResponse{
+		File:         file,
+		WriteAccess:  h.canWriteFile(r, user, &file),
+		AccessGrants: grants,
+	}
+}
+
+func (h *FilesRouter) filterReadableFiles(r *http.Request, items []models.File, user *models.User) []fileAccessResponse {
+	result := make([]fileAccessResponse, 0, len(items))
+	for _, item := range items {
+		if h.canReadFile(r, user, &item) {
+			result = append(result, h.serializeFile(r, item, user))
+		}
+	}
+	return result
+}
+
+func extractFiles(items []fileAccessResponse) []models.File {
+	result := make([]models.File, 0, len(items))
+	for _, item := range items {
+		result = append(result, item.File)
+	}
+	return result
 }

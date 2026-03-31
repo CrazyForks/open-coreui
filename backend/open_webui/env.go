@@ -18,6 +18,10 @@ type RuntimeConfig struct {
 	DatabaseURL                 string
 	DatabaseSchema              string
 	EnableDBMigrations          bool
+	EnableDirectConnections     bool
+	EnableBaseModelsCache       bool
+	ToolServerConnections       []map[string]any
+	TerminalServerConnections   []map[string]any
 	DatabaseEnableSQLiteWAL     bool
 	DatabaseEnableSessionShare  bool
 	DatabasePoolSize            int
@@ -90,6 +94,10 @@ func ConfigFromEnv() RuntimeConfig {
 		DatabaseURL:                 databaseURL,
 		DatabaseSchema:              strings.TrimSpace(os.Getenv("DATABASE_SCHEMA")),
 		EnableDBMigrations:          parseBoolEnv("ENABLE_DB_MIGRATIONS", true),
+		EnableDirectConnections:     parseBoolEnv("ENABLE_DIRECT_CONNECTIONS", false),
+		EnableBaseModelsCache:       parseBoolEnv("ENABLE_BASE_MODELS_CACHE", false),
+		ToolServerConnections:       parseJSONArrayMapEnv("TOOL_SERVER_CONNECTIONS"),
+		TerminalServerConnections:   parseJSONArrayMapEnv("TERMINAL_SERVER_CONNECTIONS"),
 		DatabaseEnableSQLiteWAL:     parseBoolEnv("DATABASE_ENABLE_SQLITE_WAL", false),
 		DatabaseEnableSessionShare:  parseBoolEnv("DATABASE_ENABLE_SESSION_SHARING", false),
 		DatabasePoolSize:            parseIntEnv("DATABASE_POOL_SIZE", 0),

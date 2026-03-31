@@ -50,9 +50,11 @@ func TestFilesRouterCRUD(t *testing.T) {
 			WebUISecretKey: "secret",
 			EnableAPIKeys:  true,
 		},
-		Users:   users,
-		Files:   filesTable,
-		Storage: provider,
+		Users:        users,
+		Files:        filesTable,
+		Groups:       models.NewGroupsTable(db),
+		AccessGrants: models.NewAccessGrantsTable(db),
+		Storage:      provider,
 	}
 
 	mux := http.NewServeMux()
@@ -135,6 +137,23 @@ func TestFilesRouterCRUD(t *testing.T) {
 	mux.ServeHTTP(contentRes, contentReq)
 	if contentRes.Code != http.StatusOK {
 		t.Fatalf("unexpected get file content status: %d", contentRes.Code)
+	}
+
+	accessBody, _ := json.Marshal(map[string]any{
+		"access_grants": []map[string]any{
+			{
+				"principal_type": "user",
+				"principal_id":   "*",
+				"permission":     "read",
+			},
+		},
+	})
+	accessReq := httptest.NewRequest(http.MethodPost, "/api/v1/files/"+fileID+"/access/update", bytes.NewReader(accessBody))
+	accessReq.Header.Set("Authorization", "Bearer "+token)
+	accessRes := httptest.NewRecorder()
+	mux.ServeHTTP(accessRes, accessReq)
+	if accessRes.Code != http.StatusOK {
+		t.Fatalf("unexpected file access update status: %d", accessRes.Code)
 	}
 
 	deleteReq := httptest.NewRequest(http.MethodDelete, "/api/v1/files/"+fileID, nil)

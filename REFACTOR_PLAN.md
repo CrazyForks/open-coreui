@@ -997,10 +997,26 @@ backend/
 - [x] 12.209 扩展 `backend/open_webui/routers/skills.go`，补 `access/update` 与 `toggle`
 - [x] 12.210 为 skills 授权场景补测试
 - [x] 12.211 再次运行 `go test ./...`
-- [ ] 12.212 将 prompts 接入 access_grants 读写判定
-- [ ] 12.213 扩展 `backend/open_webui/routers/prompts.go`，补 `access/update`
-- [ ] 12.214 为 prompts 授权场景补测试
-- [ ] 12.215 再次运行 `go test ./...`
+- [x] 12.216 将 tools 接入 access_grants 读写判定
+- [x] 12.217 扩展 `backend/open_webui/routers/tools.go`，补 `access/update`
+- [x] 12.218 为 tools 授权场景补测试
+- [x] 12.219 再次运行 `go test ./...`
+- [x] 12.224 将 notes 接入 access_grants 读写判定
+- [x] 12.225 扩展 `backend/open_webui/routers/notes.go`，补 `access/update`
+- [x] 12.226 为 notes 授权场景补测试
+- [x] 12.227 再次运行 `go test ./...`
+- [x] 12.212 将 prompts 接入 access_grants 读写判定
+- [x] 12.213 扩展 `backend/open_webui/routers/prompts.go`，补 `access/update`
+- [x] 12.214 为 prompts 授权场景补测试
+- [x] 12.215 再次运行 `go test ./...`
+- [x] 12.220 将 models 接入 access_grants 读写判定
+- [x] 12.221 扩展 `backend/open_webui/routers/models.go`，补 `access/update`
+- [x] 12.222 为 models 授权场景补测试
+- [x] 12.223 再次运行 `go test ./...`
+- [x] 12.228 将 files 接入 access_grants 读写判定
+- [x] 12.229 扩展 `backend/open_webui/routers/files.go`，补 `access/update`
+- [x] 12.230 为 files 授权场景补测试
+- [x] 12.231 再次运行 `go test ./...`
 - [ ] 12.173 扩展运行配置，补 `UPLOAD_DIR`
 - [ ] 12.174 实现 `backend/open_webui/storage/provider.go` 的本地存储实现
 - [ ] 12.175 实现 `backend/open_webui/models/files.go` 的最小仓储层
@@ -1027,6 +1043,11 @@ backend/
 - [x] 12.176 为 models 增加最小测试
 - [x] 12.177 更新 `backend/SYNC_MAP.yaml` 中 model 相关文件状态
 - [x] 12.178 再次运行 `go test ./...`
+- [x] 12.232 实现 `backend/open_webui/routers/utils.go` 的轻量接口
+- [x] 12.233 在 `main.go` 接入 utils 路由
+- [x] 12.234 为 utils 增加最小测试
+- [x] 12.235 更新 `backend/SYNC_MAP.yaml` 中 utils 路由状态
+- [x] 12.236 再次运行 `go test ./...`
 - [x] 12.196 实现 `backend/open_webui/models/tools.go` 的最小仓储层
 - [x] 12.197 实现 `backend/open_webui/routers/tools.go` 的最小 CRUD
 - [x] 12.198 在 `main.go` 接入 tools 路由
@@ -1039,3 +1060,23 @@ backend/
 - [x] 12.205 为 access_grants 增加最小测试
 - [x] 12.206 更新 `backend/SYNC_MAP.yaml` 中 access_grants 相关文件状态
 - [x] 12.207 再次运行 `go test ./...`
+- [x] 12.237 扩展运行配置，补 connections 相关布尔项
+- [x] 12.238 实现 `backend/open_webui/routers/configs.go` 的 import/export/connections
+- [x] 12.239 在 `main.go` 接入 ConfigStore 与 configs 路由
+- [x] 12.240 为 configs 增加最小测试
+- [x] 12.241 更新 `backend/SYNC_MAP.yaml` 中 configs 路由状态
+- [x] 12.242 再次运行 `go test ./...`
+- [x] 12.243 扩展运行配置，补 `TERMINAL_SERVER_CONNECTIONS`
+- [x] 12.244 扩展 `backend/open_webui/routers/configs.go`，补 `terminal_servers` 配置读写
+- [x] 12.245 实现 `backend/open_webui/utils/access_control` 中 `has_connection_access` 最小判定
+- [x] 12.246 实现 `backend/open_webui/routers/terminals.go` 的列表与 HTTP 代理
+- [x] 12.247 在 `main.go` 接入 terminals 路由并加载 terminal config
+- [x] 12.248 为 configs/terminals 增加最小测试
+- [x] 12.249 更新 `backend/SYNC_MAP.yaml` 中 terminals/config 状态
+- [x] 12.250 再次运行 `go test ./...`
+- [x] 12.251 扩展运行配置，补 `TOOL_SERVER_CONNECTIONS`
+- [x] 12.252 扩展 `backend/open_webui/routers/configs.go`，补 `tool_servers` 配置读写
+- [x] 12.253 在 `main.go` 加载 tool server config 到 `ConfigsState`
+- [x] 12.254 为 configs 增加 `tool_servers` 最小测试
+- [x] 12.255 更新 `backend/SYNC_MAP.yaml` 中 configs 状态
+- [x] 12.256 再次运行 `go test ./...`

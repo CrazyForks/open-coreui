@@ -2,6 +2,7 @@ package openwebui
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"time"
@@ -35,6 +36,42 @@ func NewHandler(cfg RuntimeConfig) (http.Handler, error) {
 		if err := migrations.Run(ctx, db); err != nil {
 			_ = db.Close()
 			return nil, err
+		}
+	}
+	configStore, err := NewConfigStoreWithHandle(ctx, cfg, db)
+	if err != nil {
+		_ = db.Close()
+		return nil, err
+	}
+	configsState := &routers.ConfigsState{
+		EnableDirectConnections:   cfg.EnableDirectConnections,
+		EnableBaseModelsCache:     cfg.EnableBaseModelsCache,
+		ToolServerConnections:     cloneRuntimeConfigList(cfg.ToolServerConnections),
+		TerminalServerConnections: cloneRuntimeConfigList(cfg.TerminalServerConnections),
+	}
+	configData, err := configStore.Load(ctx)
+	if err != nil {
+		_ = db.Close()
+		return nil, err
+	}
+	if value, ok := GetConfigValue(configData, "direct.enable"); ok {
+		if enabled, typeOK := value.(bool); typeOK {
+			configsState.EnableDirectConnections = enabled
+		}
+	}
+	if value, ok := GetConfigValue(configData, "models.base_models_cache"); ok {
+		if enabled, typeOK := value.(bool); typeOK {
+			configsState.EnableBaseModelsCache = enabled
+		}
+	}
+	if value, ok := GetConfigValue(configData, "tool_server.connections"); ok {
+		if connections, typeOK := decodeRuntimeConfigList(value); typeOK {
+			configsState.ToolServerConnections = connections
+		}
+	}
+	if value, ok := GetConfigValue(configData, "terminal_server.connections"); ok {
+		if connections, typeOK := decodeRuntimeConfigList(value); typeOK {
+			configsState.TerminalServerConnections = connections
 		}
 	}
 
@@ -93,8 +130,10 @@ func NewHandler(cfg RuntimeConfig) (http.Handler, error) {
 			WebUISecretKey: cfg.WebUISecretKey,
 			EnableAPIKeys:  cfg.EnableAPIKeys,
 		},
-		Users: usersTable,
-		Notes: models.NewNotesTable(db),
+		Users:        usersTable,
+		Notes:        models.NewNotesTable(db),
+		Groups:       groupsTable,
+		AccessGrants: accessGrantsTable,
 	}
 	notesRouter.Register(mux)
 	memoriesRouter := &routers.MemoriesRouter{
@@ -152,8 +191,10 @@ func NewHandler(cfg RuntimeConfig) (http.Handler, error) {
 			EnableAPIKeys:  cfg.EnableAPIKeys,
 			StaticDir:      cfg.StaticDir,
 		},
-		Users:  usersTable,
-		Models: models.NewModelsTable(db),
+		Users:        usersTable,
+		Models:       models.NewModelsTable(db),
+		Groups:       groupsTable,
+		AccessGrants: accessGrantsTable,
 	}
 	modelsRouter.Register(mux)
 	filesRouter := &routers.FilesRouter{
@@ -161,9 +202,11 @@ func NewHandler(cfg RuntimeConfig) (http.Handler, error) {
 			WebUISecretKey: cfg.WebUISecretKey,
 			EnableAPIKeys:  cfg.EnableAPIKeys,
 		},
-		Users:   usersTable,
-		Files:   models.NewFilesTable(db),
-		Storage: storage.NewLocalProvider(cfg.UploadDir),
+		Users:        usersTable,
+		Files:        models.NewFilesTable(db),
+		Groups:       groupsTable,
+		AccessGrants: accessGrantsTable,
+		Storage:      storage.NewLocalProvider(cfg.UploadDir),
 	}
 	filesRouter.Register(mux)
 	evaluationsRouter := &routers.EvaluationsRouter{
@@ -182,10 +225,41 @@ func NewHandler(cfg RuntimeConfig) (http.Handler, error) {
 			WebUISecretKey: cfg.WebUISecretKey,
 			EnableAPIKeys:  cfg.EnableAPIKeys,
 		},
-		Users: usersTable,
-		Tools: models.NewToolsTable(db),
+		Users:        usersTable,
+		Tools:        models.NewToolsTable(db),
+		Groups:       groupsTable,
+		AccessGrants: accessGrantsTable,
 	}
 	toolsRouter.Register(mux)
+	configsRouter := &routers.ConfigsRouter{
+		Config: routers.ConfigsRuntimeConfig{
+			WebUISecretKey: cfg.WebUISecretKey,
+			EnableAPIKeys:  cfg.EnableAPIKeys,
+			State:          configsState,
+		},
+		Users: usersTable,
+		Store: configStore,
+	}
+	configsRouter.Register(mux)
+	terminalsRouter := &routers.TerminalsRouter{
+		Config: routers.TerminalsRuntimeConfig{
+			WebUISecretKey: cfg.WebUISecretKey,
+			EnableAPIKeys:  cfg.EnableAPIKeys,
+			State:          configsState,
+		},
+		Users:  usersTable,
+		Groups: groupsTable,
+	}
+	terminalsRouter.Register(mux)
+	utilsRouter := &routers.UtilsRouter{
+		Config: routers.UtilsRuntimeConfig{
+			WebUISecretKey: cfg.WebUISecretKey,
+			EnableAPIKeys:  cfg.EnableAPIKeys,
+			DatabaseURL:    cfg.DatabaseURL,
+		},
+		Users: usersTable,
+	}
+	utilsRouter.Register(mux)
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte("ok"))
@@ -209,4 +283,34 @@ func Run() error {
 	}
 
 	return server.ListenAndServe()
+}
+
+func cloneRuntimeConfigList(source []map[string]any) []map[string]any {
+	if source == nil {
+		return []map[string]any{}
+	}
+	body, err := json.Marshal(source)
+	if err != nil {
+		return []map[string]any{}
+	}
+	var target []map[string]any
+	if err := json.Unmarshal(body, &target); err != nil {
+		return []map[string]any{}
+	}
+	return target
+}
+
+func decodeRuntimeConfigList(value any) ([]map[string]any, bool) {
+	if value == nil {
+		return []map[string]any{}, true
+	}
+	body, err := json.Marshal(value)
+	if err != nil {
+		return nil, false
+	}
+	var items []map[string]any
+	if err := json.Unmarshal(body, &items); err != nil {
+		return nil, false
+	}
+	return items, true
 }

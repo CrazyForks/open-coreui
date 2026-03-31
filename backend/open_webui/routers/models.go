@@ -20,9 +20,11 @@ type ModelsRuntimeConfig struct {
 }
 
 type ModelsRouter struct {
-	Config ModelsRuntimeConfig
-	Users  *models.UsersTable
-	Models *models.ModelsTable
+	Config       ModelsRuntimeConfig
+	Users        *models.UsersTable
+	Models       *models.ModelsTable
+	Groups       *models.GroupsTable
+	AccessGrants *models.AccessGrantsTable
 }
 
 type modelForm struct {
@@ -43,6 +45,18 @@ type modelListResponse struct {
 	Total int            `json:"total"`
 }
 
+type modelAccessResponse struct {
+	models.Model
+	WriteAccess  bool                 `json:"write_access"`
+	AccessGrants []models.AccessGrant `json:"access_grants,omitempty"`
+}
+
+type modelAccessGrantsForm struct {
+	ID           string           `json:"id"`
+	Name         *string          `json:"name,omitempty"`
+	AccessGrants []map[string]any `json:"access_grants"`
+}
+
 func (h *ModelsRouter) Register(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/v1/models/list", h.GetModelsList)
 	mux.HandleFunc("GET /api/v1/models/base", h.GetBaseModels)
@@ -54,6 +68,7 @@ func (h *ModelsRouter) Register(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/v1/models/model/profile/image", h.GetModelProfileImage)
 	mux.HandleFunc("POST /api/v1/models/model/toggle", h.ToggleModelByID)
 	mux.HandleFunc("POST /api/v1/models/model/update", h.UpdateModelByID)
+	mux.HandleFunc("POST /api/v1/models/model/access/update", h.UpdateModelAccessByID)
 	mux.HandleFunc("POST /api/v1/models/model/delete", h.DeleteModelByID)
 	mux.HandleFunc("DELETE /api/v1/models/delete/all", h.DeleteAllModels)
 }
@@ -73,7 +88,7 @@ func (h *ModelsRouter) GetModelsList(w http.ResponseWriter, r *http.Request) {
 	if user.Role != "admin" {
 		userID = user.ID
 	}
-	items, total, err := h.Models.SearchModels(r.Context(), userID, models.ModelSearchOptions{
+	items, _, err := h.Models.SearchModels(r.Context(), userID, models.ModelSearchOptions{
 		Query:     r.URL.Query().Get("query"),
 		OrderBy:   r.URL.Query().Get("order_by"),
 		Direction: r.URL.Query().Get("direction"),
@@ -84,11 +99,13 @@ func (h *ModelsRouter) GetModelsList(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"detail": err.Error()})
 		return
 	}
-	writeJSON(w, http.StatusOK, modelListResponse{Items: items, Total: total})
+	filtered := h.filterReadableModels(r, items, user)
+	writeJSON(w, http.StatusOK, modelListResponse{Items: extractModels(filtered), Total: len(filtered)})
 }
 
 func (h *ModelsRouter) GetBaseModels(w http.ResponseWriter, r *http.Request) {
-	if _, ok := h.requireAdminUser(w, r); !ok {
+	user, ok := h.requireAdminUser(w, r)
+	if !ok {
 		return
 	}
 	items, err := h.Models.GetModels(r.Context(), true)
@@ -96,7 +113,7 @@ func (h *ModelsRouter) GetBaseModels(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"detail": err.Error()})
 		return
 	}
-	writeJSON(w, http.StatusOK, items)
+	writeJSON(w, http.StatusOK, h.serializeModels(r, items, user))
 }
 
 func (h *ModelsRouter) GetModelTags(w http.ResponseWriter, r *http.Request) {
@@ -158,15 +175,15 @@ func (h *ModelsRouter) ExportModels(w http.ResponseWriter, r *http.Request) {
 			writeJSON(w, http.StatusInternalServerError, map[string]string{"detail": err.Error()})
 			return
 		}
-		writeJSON(w, http.StatusOK, items)
+		writeJSON(w, http.StatusOK, h.serializeModels(r, items, user))
 		return
 	}
-	items, err := h.Models.GetModelsByUserID(r.Context(), user.ID)
+	items, err := h.Models.GetModels(r.Context(), false)
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"detail": err.Error()})
 		return
 	}
-	writeJSON(w, http.StatusOK, items)
+	writeJSON(w, http.StatusOK, extractModels(h.filterReadableModels(r, items, user)))
 }
 
 func (h *ModelsRouter) ImportModels(w http.ResponseWriter, r *http.Request) {
@@ -222,11 +239,11 @@ func (h *ModelsRouter) GetModelByID(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"detail": err.Error()})
 		return
 	}
-	if model == nil || (user.Role != "admin" && model.UserID != user.ID) {
+	if model == nil || !h.canReadModel(r, user, model) {
 		writeJSON(w, http.StatusNotFound, map[string]string{"detail": "not found"})
 		return
 	}
-	writeJSON(w, http.StatusOK, model)
+	writeJSON(w, http.StatusOK, h.serializeModel(r, *model, user))
 }
 
 func (h *ModelsRouter) GetModelProfileImage(w http.ResponseWriter, r *http.Request) {
@@ -267,7 +284,7 @@ func (h *ModelsRouter) ToggleModelByID(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"detail": err.Error()})
 		return
 	}
-	if model == nil || (user.Role != "admin" && model.UserID != user.ID) {
+	if model == nil || !h.canWriteModel(r, user, model) {
 		writeJSON(w, http.StatusUnauthorized, map[string]string{"detail": "not found"})
 		return
 	}
@@ -277,6 +294,59 @@ func (h *ModelsRouter) ToggleModelByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, model)
+}
+
+func (h *ModelsRouter) UpdateModelAccessByID(w http.ResponseWriter, r *http.Request) {
+	user, ok := h.requireVerifiedUser(w, r)
+	if !ok {
+		return
+	}
+	var form modelAccessGrantsForm
+	if err := json.NewDecoder(r.Body).Decode(&form); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"detail": "invalid request body"})
+		return
+	}
+	model, err := h.Models.GetModelByID(r.Context(), form.ID)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"detail": err.Error()})
+		return
+	}
+	if model == nil {
+		if user.Role != "admin" {
+			writeJSON(w, http.StatusForbidden, map[string]string{"detail": "access prohibited"})
+			return
+		}
+		name := form.ID
+		if form.Name != nil && *form.Name != "" {
+			name = *form.Name
+		}
+		model, err = h.Models.InsertNewModel(r.Context(), models.ModelCreateParams{
+			ID:       form.ID,
+			UserID:   user.ID,
+			Name:     name,
+			Params:   map[string]any{},
+			Meta:     map[string]any{},
+			IsActive: true,
+		})
+		if err != nil {
+			writeJSON(w, http.StatusInternalServerError, map[string]string{"detail": err.Error()})
+			return
+		}
+	}
+	if !h.canWriteModel(r, user, model) {
+		writeJSON(w, http.StatusUnauthorized, map[string]string{"detail": "access prohibited"})
+		return
+	}
+	if err := h.AccessGrants.SetAccessGrants(r.Context(), "model", model.ID, form.AccessGrants); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"detail": err.Error()})
+		return
+	}
+	updated, err := h.Models.GetModelByID(r.Context(), model.ID)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"detail": err.Error()})
+		return
+	}
+	writeJSON(w, http.StatusOK, h.serializeModel(r, *updated, user))
 }
 
 func (h *ModelsRouter) UpdateModelByID(w http.ResponseWriter, r *http.Request) {
@@ -294,7 +364,7 @@ func (h *ModelsRouter) UpdateModelByID(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"detail": err.Error()})
 		return
 	}
-	if model == nil || (user.Role != "admin" && model.UserID != user.ID) {
+	if model == nil || !h.canWriteModel(r, user, model) {
 		writeJSON(w, http.StatusUnauthorized, map[string]string{"detail": "not found"})
 		return
 	}
@@ -414,4 +484,82 @@ func modelStringPtr(value string) *string {
 		return nil
 	}
 	return &value
+}
+
+func (h *ModelsRouter) userGroupIDs(r *http.Request, userID string) []string {
+	if h.Groups == nil {
+		return nil
+	}
+	groups, err := h.Groups.GetGroupsByMemberID(r.Context(), userID)
+	if err != nil {
+		return nil
+	}
+	ids := make([]string, 0, len(groups))
+	for _, group := range groups {
+		ids = append(ids, group.ID)
+	}
+	return ids
+}
+
+func (h *ModelsRouter) canReadModel(r *http.Request, user *models.User, model *models.Model) bool {
+	if user.Role == "admin" || model.UserID == user.ID {
+		return true
+	}
+	if h.AccessGrants == nil {
+		return false
+	}
+	allowed, err := h.AccessGrants.HasAccess(r.Context(), user.ID, "model", model.ID, "read", h.userGroupIDs(r, user.ID))
+	return err == nil && allowed
+}
+
+func (h *ModelsRouter) canWriteModel(r *http.Request, user *models.User, model *models.Model) bool {
+	if user.Role == "admin" || model.UserID == user.ID {
+		return true
+	}
+	if h.AccessGrants == nil {
+		return false
+	}
+	allowed, err := h.AccessGrants.HasAccess(r.Context(), user.ID, "model", model.ID, "write", h.userGroupIDs(r, user.ID))
+	return err == nil && allowed
+}
+
+func (h *ModelsRouter) serializeModel(r *http.Request, model models.Model, user *models.User) modelAccessResponse {
+	grants := []models.AccessGrant{}
+	if h.AccessGrants != nil {
+		loaded, err := h.AccessGrants.GetGrantsByResource(r.Context(), "model", model.ID)
+		if err == nil {
+			grants = loaded
+		}
+	}
+	return modelAccessResponse{
+		Model:        model,
+		WriteAccess:  h.canWriteModel(r, user, &model),
+		AccessGrants: grants,
+	}
+}
+
+func (h *ModelsRouter) serializeModels(r *http.Request, items []models.Model, user *models.User) []modelAccessResponse {
+	result := make([]modelAccessResponse, 0, len(items))
+	for _, item := range items {
+		result = append(result, h.serializeModel(r, item, user))
+	}
+	return result
+}
+
+func (h *ModelsRouter) filterReadableModels(r *http.Request, items []models.Model, user *models.User) []modelAccessResponse {
+	result := make([]modelAccessResponse, 0, len(items))
+	for _, item := range items {
+		if h.canReadModel(r, user, &item) {
+			result = append(result, h.serializeModel(r, item, user))
+		}
+	}
+	return result
+}
+
+func extractModels(items []modelAccessResponse) []models.Model {
+	result := make([]models.Model, 0, len(items))
+	for _, item := range items {
+		result = append(result, item.Model)
+	}
+	return result
 }

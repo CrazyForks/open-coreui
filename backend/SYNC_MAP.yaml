@@ -886,8 +886,9 @@ entries:
     last_verified_at: null
   - python_path: "open-webui/backend/open_webui/routers/configs.py"
     go_path: "backend/open_webui/routers/configs.go"
-    status: "stub"
-    companions: []
+    status: "ported"
+    companions:
+      - "backend/open_webui/routers/terminals.go"
     source_submodule_sha: "9bd84258d09eefe7bf975878fb0e31a5dadfe0f8"
     last_verified_at: null
   - python_path: "open-webui/backend/open_webui/routers/evaluations.py"
@@ -1000,7 +1001,7 @@ entries:
     last_verified_at: null
   - python_path: "open-webui/backend/open_webui/routers/terminals.py"
     go_path: "backend/open_webui/routers/terminals.go"
-    status: "stub"
+    status: "partial"
     companions: []
     source_submodule_sha: "9bd84258d09eefe7bf975878fb0e31a5dadfe0f8"
     last_verified_at: null
@@ -1018,7 +1019,7 @@ entries:
     last_verified_at: null
   - python_path: "open-webui/backend/open_webui/routers/utils.py"
     go_path: "backend/open_webui/routers/utils.go"
-    status: "stub"
+    status: "ported"
     companions: []
     source_submodule_sha: "9bd84258d09eefe7bf975878fb0e31a5dadfe0f8"
     last_verified_at: null
@@ -1096,7 +1097,7 @@ entries:
     last_verified_at: null
   - python_path: "open-webui/backend/open_webui/utils/access_control/__init__.py"
     go_path: "backend/open_webui/utils/access_control/init__.go"
-    status: "stub"
+    status: "partial"
     companions: []
     source_submodule_sha: "9bd84258d09eefe7bf975878fb0e31a5dadfe0f8"
     last_verified_at: null
