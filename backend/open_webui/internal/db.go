@@ -42,18 +42,18 @@ func Open(ctx context.Context, opts Options) (*Handle, error) {
 		return nil, errors.New("database url is required")
 	}
 
-	driverName, dsn, dialect, err := resolveDriver(opts.DatabaseURL)
+	spec, err := ResolveConnection(opts.DatabaseURL)
 	if err != nil {
 		return nil, err
 	}
 
-	if dialect == DialectSQLite {
-		if err := os.MkdirAll(filepath.Dir(dsn), 0o755); err != nil {
+	if spec.Dialect == DialectSQLite {
+		if err := os.MkdirAll(filepath.Dir(spec.DSN), 0o755); err != nil {
 			return nil, err
 		}
 	}
 
-	db, err := sql.Open(driverName, dsn)
+	db, err := sql.Open(spec.DriverName, spec.DSN)
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +78,7 @@ func Open(ctx context.Context, opts Options) (*Handle, error) {
 		return nil, err
 	}
 
-	if dialect == DialectSQLite {
+	if spec.Dialect == DialectSQLite {
 		journalMode := "DELETE"
 		if opts.EnableSQLiteWAL {
 			journalMode = "WAL"
@@ -91,30 +91,10 @@ func Open(ctx context.Context, opts Options) (*Handle, error) {
 
 	return &Handle{
 		DB:          db,
-		Dialect:     dialect,
+		Dialect:     spec.Dialect,
 		DatabaseURL: opts.DatabaseURL,
 		Schema:      opts.DatabaseSchema,
 	}, nil
-}
-
-func resolveDriver(databaseURL string) (string, string, Dialect, error) {
-	normalized := strings.TrimSpace(databaseURL)
-	if strings.HasPrefix(normalized, "postgres://") {
-		normalized = "postgresql://" + strings.TrimPrefix(normalized, "postgres://")
-	}
-
-	switch {
-	case strings.HasPrefix(normalized, "sqlite+sqlcipher://"):
-		return "", "", "", fmt.Errorf("unsupported database url: %s", normalized)
-	case strings.HasPrefix(normalized, "sqlite:///"):
-		return "sqlite", strings.TrimPrefix(normalized, "sqlite:///"), DialectSQLite, nil
-	case strings.HasPrefix(normalized, "sqlite://"):
-		return "sqlite", strings.TrimPrefix(normalized, "sqlite://"), DialectSQLite, nil
-	case strings.HasPrefix(normalized, "postgresql://"):
-		return "pgx", normalized, DialectPostgres, nil
-	default:
-		return "", "", "", fmt.Errorf("unsupported database url: %s", normalized)
-	}
 }
 
 func (h *Handle) Close() error {
@@ -160,4 +140,67 @@ func (h *Handle) TableExists(ctx context.Context, table string) (bool, error) {
 	default:
 		return false, fmt.Errorf("unsupported dialect: %s", h.Dialect)
 	}
+}
+
+func (h *Handle) ExistingColumns(ctx context.Context, table string) ([]string, error) {
+	switch h.Dialect {
+	case DialectSQLite:
+		rows, err := h.DB.QueryContext(ctx, `PRAGMA table_info("`+table+`")`)
+		if err != nil {
+			return nil, err
+		}
+		defer rows.Close()
+
+		var columns []string
+		for rows.Next() {
+			var cid int
+			var name string
+			var dataType string
+			var notNull int
+			var defaultValue any
+			var pk int
+			if err := rows.Scan(&cid, &name, &dataType, &notNull, &defaultValue, &pk); err != nil {
+				return nil, err
+			}
+			columns = append(columns, name)
+		}
+		return columns, rows.Err()
+	case DialectPostgres:
+		query := `SELECT column_name FROM information_schema.columns WHERE table_name = $1 AND table_schema = current_schema() ORDER BY ordinal_position`
+		args := []any{table}
+		if h.Schema != "" {
+			query = `SELECT column_name FROM information_schema.columns WHERE table_name = $1 AND table_schema = $2 ORDER BY ordinal_position`
+			args = append(args, h.Schema)
+		}
+		rows, err := h.DB.QueryContext(ctx, query, args...)
+		if err != nil {
+			return nil, err
+		}
+		defer rows.Close()
+
+		var columns []string
+		for rows.Next() {
+			var name string
+			if err := rows.Scan(&name); err != nil {
+				return nil, err
+			}
+			columns = append(columns, name)
+		}
+		return columns, rows.Err()
+	default:
+		return nil, fmt.Errorf("unsupported dialect: %s", h.Dialect)
+	}
+}
+
+func (h *Handle) HasColumn(ctx context.Context, table string, column string) (bool, error) {
+	columns, err := h.ExistingColumns(ctx, table)
+	if err != nil {
+		return false, err
+	}
+	for _, existing := range columns {
+		if existing == column {
+			return true, nil
+		}
+	}
+	return false, nil
 }

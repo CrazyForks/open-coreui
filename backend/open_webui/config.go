@@ -11,6 +11,7 @@ import (
 	"time"
 
 	dbinternal "github.com/xxnuo/open-coreui/backend/open_webui/internal"
+	"github.com/xxnuo/open-coreui/backend/open_webui/migrations"
 )
 
 var defaultConfigData = map[string]any{
@@ -51,6 +52,13 @@ func NewConfigStore(ctx context.Context, runtime RuntimeConfig) (*ConfigStore, e
 	store := &ConfigStore{
 		runtime: runtime,
 		db:      dbHandle,
+	}
+
+	if runtime.EnableDBMigrations {
+		if err := migrations.Run(ctx, dbHandle); err != nil {
+			_ = store.Close()
+			return nil, err
+		}
 	}
 
 	if err := store.migrateLegacyConfigJSON(ctx); err != nil {

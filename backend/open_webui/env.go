@@ -12,6 +12,7 @@ type RuntimeConfig struct {
 	ListenAddr                 string
 	PythonBaseURL              string
 	DataDir                    string
+	StaticDir                  string
 	DatabaseURL                string
 	DatabaseSchema             string
 	EnableDBMigrations         bool
@@ -21,6 +22,14 @@ type RuntimeConfig struct {
 	DatabasePoolMaxOverflow    int
 	DatabasePoolTimeout        time.Duration
 	DatabasePoolRecycle        time.Duration
+	WebUIAuth                  bool
+	EnableInitialAdminSignup   bool
+	EnablePasswordAuth         bool
+	WebUISecretKey             string
+	JWTExpiresIn               string
+	AuthCookieSameSite         string
+	AuthCookieSecure           bool
+	TrustedEmailHeader         string
 }
 
 func ConfigFromEnv() RuntimeConfig {
@@ -55,9 +64,15 @@ func ConfigFromEnv() RuntimeConfig {
 	}
 
 	return RuntimeConfig{
-		ListenAddr:                 firstNonEmpty(os.Getenv("OPEN_COREUI_GO_ADDR"), ":8081"),
-		PythonBaseURL:              firstNonEmpty(os.Getenv("OPEN_COREUI_PYTHON_BASE_URL"), "http://127.0.0.1:8080"),
-		DataDir:                    dataDir,
+		ListenAddr:    firstNonEmpty(os.Getenv("OPEN_COREUI_GO_ADDR"), ":8081"),
+		PythonBaseURL: firstNonEmpty(os.Getenv("OPEN_COREUI_PYTHON_BASE_URL"), "http://127.0.0.1:8080"),
+		DataDir:       dataDir,
+		StaticDir: firstExistingPath(
+			os.Getenv("STATIC_DIR"),
+			filepath.Join("open-webui", "backend", "open_webui", "static"),
+			filepath.Join("..", "open-webui", "backend", "open_webui", "static"),
+			filepath.Join("open_webui", "static"),
+		),
 		DatabaseURL:                databaseURL,
 		DatabaseSchema:             strings.TrimSpace(os.Getenv("DATABASE_SCHEMA")),
 		EnableDBMigrations:         parseBoolEnv("ENABLE_DB_MIGRATIONS", true),
@@ -67,6 +82,14 @@ func ConfigFromEnv() RuntimeConfig {
 		DatabasePoolMaxOverflow:    parseIntEnv("DATABASE_POOL_MAX_OVERFLOW", 0),
 		DatabasePoolTimeout:        time.Duration(parseIntEnv("DATABASE_POOL_TIMEOUT", 30)) * time.Second,
 		DatabasePoolRecycle:        time.Duration(parseIntEnv("DATABASE_POOL_RECYCLE", 3600)) * time.Second,
+		WebUIAuth:                  parseBoolEnv("WEBUI_AUTH", true),
+		EnableInitialAdminSignup:   parseBoolEnv("ENABLE_INITIAL_ADMIN_SIGNUP", false),
+		EnablePasswordAuth:         parseBoolEnv("ENABLE_PASSWORD_AUTH", true),
+		WebUISecretKey:             firstNonEmpty(os.Getenv("WEBUI_SECRET_KEY"), "open-coreui-dev-secret"),
+		JWTExpiresIn:               firstNonEmpty(os.Getenv("JWT_EXPIRES_IN"), "4w"),
+		AuthCookieSameSite:         firstNonEmpty(os.Getenv("WEBUI_AUTH_COOKIE_SAME_SITE"), "Lax"),
+		AuthCookieSecure:           parseBoolEnv("WEBUI_AUTH_COOKIE_SECURE", false),
+		TrustedEmailHeader:         strings.TrimSpace(os.Getenv("WEBUI_AUTH_TRUSTED_EMAIL_HEADER")),
 	}
 }
 

@@ -837,3 +837,62 @@ backend/
 - [x] 12.14 为 `config.go` 与 `internal/db.go` 补最小测试
 - [x] 12.15 运行 `go mod tidy`
 - [x] 12.16 再次运行 `go test ./...`
+- [x] 12.17 实现 `backend/open_webui/migrations/env.go` 的最小 migration runner
+- [x] 12.18 实现 `backend/open_webui/migrations/util.go` 的表枚举能力
+- [x] 12.19 实现 `backend/open_webui/migrations/versions/ca81bd47c050_add_config_table.go`
+- [x] 12.20 将 migration 接入 `backend/open_webui/config.go`
+- [x] 12.21 为 migration 增加最小测试
+- [x] 12.22 再次运行 `go test ./...`
+- [x] 12.23 实现 `backend/open_webui/migrations/versions/7e5b5dc7342b_init.go`
+- [x] 12.24 扩展 migration 测试，验证基础表与 config 表创建
+- [x] 12.25 再次运行 `go test ./...`
+- [x] 12.26 实现 `backend/open_webui/internal/wrappers.go`
+- [x] 12.27 为 `internal/wrappers.go` 增加最小测试
+- [x] 12.28 再次运行 `go test ./...`
+- [x] 12.29 实现 `backend/open_webui/models/users.go` 的最小仓储层
+- [x] 12.30 实现 `backend/open_webui/models/auths.go` 的最小仓储层
+- [x] 12.31 为 `models/users.go` 与 `models/auths.go` 增加最小测试
+- [x] 12.32 更新 `backend/SYNC_MAP.yaml` 中 `models/users.py` 与 `models/auths.py` 状态
+- [x] 12.33 再次运行 `go test ./...`
+- [x] 12.34 扩展 `backend/open_webui/models/users.go`，补用户计数能力
+- [x] 12.35 实现 `backend/open_webui/utils/auth.go` 的最小密码与 JWT 能力
+- [x] 12.36 实现 `backend/open_webui/routers/auths.go` 的最小 `signup/signin` 路由
+- [x] 12.37 将 `signup/signin` 接入 `backend/open_webui/main.go`
+- [x] 12.38 为 auth util 与 auth router 增加最小测试
+- [x] 12.39 更新 `backend/SYNC_MAP.yaml` 中 `utils/auth.py` 与 `routers/auths.py` 状态
+- [x] 12.40 运行 `go mod tidy`
+- [x] 12.41 再次运行 `go test ./...`
+- [x] 12.42 扩展 `backend/open_webui/utils/auth.go`，补 token 提取能力
+- [x] 12.43 扩展 `backend/open_webui/routers/auths.go`，补 session user 与 signout
+- [x] 12.44 为新增 auth 路由补测试
+- [x] 12.45 再次运行 `go test ./...`
+- [x] 12.46 实现 `backend/open_webui/utils/validate.go`
+- [x] 12.47 实现 `backend/open_webui/routers/users.go` 的最小 `info/profile image` 路由
+- [x] 12.48 将 users 路由接入 `backend/open_webui/main.go`
+- [x] 12.49 为 users 路由补最小测试
+- [x] 12.50 更新 `backend/SYNC_MAP.yaml` 中 `utils/validate.py` 与 `routers/users.py` 状态
+- [x] 12.51 再次运行 `go test ./...`
+- [x] 12.52 扩展 `backend/open_webui/models/users.go`，补 settings/info 更新能力
+- [x] 12.53 扩展 `backend/open_webui/routers/users.go`，补 session user settings/info 读写
+- [x] 12.54 为新增 users 路由补测试
+- [x] 12.55 再次运行 `go test ./...`
+- [x] 12.56 实现 `backend/open_webui/migrations/versions/3af16a1c9fb6_update_user_table.go`
+- [x] 12.57 实现 `backend/open_webui/migrations/versions/b10670c03dd5_update_user_table.go`
+- [x] 12.58 实现 `backend/open_webui/migrations/versions/b2c3d4e5f6a7_add_scim_column_to_user_table.go`
+- [x] 12.59 将新增用户迁移接入 `backend/open_webui/migrations/env.go`
+- [x] 12.60 扩展 `backend/open_webui/models/users.go` 以读取新增用户字段
+- [x] 12.61 扩展 users/auths 相关测试覆盖新 schema
+- [x] 12.62 更新 `backend/SYNC_MAP.yaml` 中三个用户迁移状态
+- [x] 12.63 再次运行 `go test ./...`
+- [x] 12.64 扩展 `backend/open_webui/models/users.go`，补 `GetFirstUser`
+- [x] 12.65 扩展 `backend/open_webui/routers/auths.go`，补 profile/timezone/password 更新
+- [x] 12.66 扩展 `backend/open_webui/routers/users.go`，补管理员用户更新
+- [x] 12.67 为新增更新接口补测试
+- [x] 12.68 再次运行 `go test ./...`
+- [x] 12.69 扩展 `backend/open_webui/routers/users.go`，补管理员 get/delete user
+- [x] 12.70 统一 users 路由的用户响应结构
+- [x] 12.71 为 get/delete user 补测试
+- [x] 12.72 再次运行 `go test ./...`
+- [x] 12.73 扩展 `backend/open_webui/routers/users.go`，补 user status/active 路由
+- [x] 12.74 为 user status/active 补测试
+- [x] 12.75 再次运行 `go test ./...`
