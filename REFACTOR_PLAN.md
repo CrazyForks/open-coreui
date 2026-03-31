@@ -969,3 +969,73 @@ backend/
 - [x] 12.146 为 folders 增加最小测试
 - [x] 12.147 更新 `backend/SYNC_MAP.yaml` 中 folder 相关文件状态
 - [x] 12.148 再次运行 `go test ./...`
+- [x] 12.149 为 prompts 补最小迁移骨架
+- [x] 12.150 实现 `backend/open_webui/models/prompts.go` 的最小仓储层
+- [x] 12.151 实现 `backend/open_webui/routers/prompts.go` 的最小 CRUD
+- [x] 12.152 在 `main.go` 接入 prompts 路由
+- [x] 12.153 为 prompts 增加最小测试
+- [x] 12.154 更新 `backend/SYNC_MAP.yaml` 中 prompt 相关文件状态
+- [x] 12.155 再次运行 `go test ./...`
+- [x] 12.156 实现 `backend/open_webui/migrations/versions/374d2f66af06_add_prompt_history_table.go` 的 schema 升级逻辑
+- [x] 12.157 将 prompt history 迁移接入 `backend/open_webui/migrations/env.go`
+- [x] 12.158 再次运行 `go test ./...`
+- [x] 12.159 实现 `backend/open_webui/models/functions.go` 的最小仓储层
+- [x] 12.160 实现 `backend/open_webui/routers/functions.go` 的最小 CRUD
+- [x] 12.161 在 `main.go` 接入 functions 路由
+- [x] 12.162 为 functions 增加最小测试
+- [x] 12.163 更新 `backend/SYNC_MAP.yaml` 中 functions 相关文件状态
+- [x] 12.164 再次运行 `go test ./...`
+- [x] 12.165 实现 `backend/open_webui/migrations/versions/a1b2c3d4e5f6_add_skill_table.go`
+- [x] 12.166 将 skill 迁移接入 `backend/open_webui/migrations/env.go`
+- [x] 12.167 实现 `backend/open_webui/models/skills.go` 的最小仓储层
+- [x] 12.168 实现 `backend/open_webui/routers/skills.go` 的最小 CRUD
+- [x] 12.169 在 `main.go` 接入 skills 路由
+- [x] 12.170 为 skills 增加最小测试
+- [x] 12.171 更新 `backend/SYNC_MAP.yaml` 中 skill 相关文件状态
+- [x] 12.172 再次运行 `go test ./...`
+- [x] 12.208 将 skills 接入 access_grants 读写判定
+- [x] 12.209 扩展 `backend/open_webui/routers/skills.go`，补 `access/update` 与 `toggle`
+- [x] 12.210 为 skills 授权场景补测试
+- [x] 12.211 再次运行 `go test ./...`
+- [ ] 12.212 将 prompts 接入 access_grants 读写判定
+- [ ] 12.213 扩展 `backend/open_webui/routers/prompts.go`，补 `access/update`
+- [ ] 12.214 为 prompts 授权场景补测试
+- [ ] 12.215 再次运行 `go test ./...`
+- [ ] 12.173 扩展运行配置，补 `UPLOAD_DIR`
+- [ ] 12.174 实现 `backend/open_webui/storage/provider.go` 的本地存储实现
+- [ ] 12.175 实现 `backend/open_webui/models/files.go` 的最小仓储层
+- [x] 12.188 扩展运行配置，补 `UPLOAD_DIR`
+- [x] 12.189 实现 `backend/open_webui/storage/provider.go` 的本地存储实现
+- [x] 12.190 实现 `backend/open_webui/models/files.go` 的最小仓储层
+- [x] 12.191 实现 `backend/open_webui/routers/files.go` 的最小上传/列表/下载/删除
+- [x] 12.192 在 `main.go` 接入 files 路由
+- [x] 12.193 为 files 增加最小测试
+- [x] 12.194 更新 `backend/SYNC_MAP.yaml` 中 file/storage 相关文件状态
+- [x] 12.195 再次运行 `go test ./...`
+- [x] 12.179 实现 `backend/open_webui/migrations/versions/af906e964978_add_feedback_table.go`
+- [x] 12.180 将 feedback 迁移接入 `backend/open_webui/migrations/env.go`
+- [x] 12.181 实现 `backend/open_webui/models/feedbacks.go` 的最小仓储层
+- [x] 12.182 扩展运行配置，补 evaluation arena 配置
+- [x] 12.183 实现 `backend/open_webui/routers/evaluations.go` 的 config 与 feedback CRUD/list
+- [x] 12.184 在 `main.go` 接入 evaluations 路由
+- [x] 12.185 为 evaluations 增加最小测试
+- [x] 12.186 更新 `backend/SYNC_MAP.yaml` 中 evaluation 相关文件状态
+- [x] 12.187 再次运行 `go test ./...`
+- [x] 12.173 实现 `backend/open_webui/models/models.go` 的最小仓储层
+- [x] 12.174 实现 `backend/open_webui/routers/models.go` 的最小 CRUD
+- [x] 12.175 在 `main.go` 接入 models 路由
+- [x] 12.176 为 models 增加最小测试
+- [x] 12.177 更新 `backend/SYNC_MAP.yaml` 中 model 相关文件状态
+- [x] 12.178 再次运行 `go test ./...`
+- [x] 12.196 实现 `backend/open_webui/models/tools.go` 的最小仓储层
+- [x] 12.197 实现 `backend/open_webui/routers/tools.go` 的最小 CRUD
+- [x] 12.198 在 `main.go` 接入 tools 路由
+- [x] 12.199 为 tools 增加最小测试
+- [x] 12.200 更新 `backend/SYNC_MAP.yaml` 中 tool 相关文件状态
+- [x] 12.201 再次运行 `go test ./...`
+- [x] 12.202 实现 `backend/open_webui/migrations/versions/f1e2d3c4b5a6_add_access_grant_table.go`
+- [x] 12.203 将 access_grant 迁移接入 `backend/open_webui/migrations/env.go`
+- [x] 12.204 实现 `backend/open_webui/models/access_grants.go` 的最小模型层
+- [x] 12.205 为 access_grants 增加最小测试
+- [x] 12.206 更新 `backend/SYNC_MAP.yaml` 中 access_grants 相关文件状态
+- [x] 12.207 再次运行 `go test ./...`

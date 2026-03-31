@@ -11,6 +11,7 @@ import (
 	"github.com/xxnuo/open-coreui/backend/open_webui/migrations"
 	"github.com/xxnuo/open-coreui/backend/open_webui/models"
 	"github.com/xxnuo/open-coreui/backend/open_webui/routers"
+	"github.com/xxnuo/open-coreui/backend/open_webui/storage"
 )
 
 func NewHandler(cfg RuntimeConfig) (http.Handler, error) {
@@ -77,6 +78,7 @@ func NewHandler(cfg RuntimeConfig) (http.Handler, error) {
 	}
 	usersRouter.Register(mux)
 	groupsTable := models.NewGroupsTable(db)
+	accessGrantsTable := models.NewAccessGrantsTable(db)
 	groupsRouter := &routers.GroupsRouter{
 		Config: routers.GroupsRuntimeConfig{
 			WebUISecretKey: cfg.WebUISecretKey,
@@ -113,6 +115,77 @@ func NewHandler(cfg RuntimeConfig) (http.Handler, error) {
 		Folders: models.NewFoldersTable(db),
 	}
 	foldersRouter.Register(mux)
+	promptsRouter := &routers.PromptsRouter{
+		Config: routers.PromptsRuntimeConfig{
+			WebUISecretKey: cfg.WebUISecretKey,
+			EnableAPIKeys:  cfg.EnableAPIKeys,
+		},
+		Users:        usersTable,
+		Prompts:      models.NewPromptsTable(db),
+		Groups:       groupsTable,
+		AccessGrants: accessGrantsTable,
+	}
+	promptsRouter.Register(mux)
+	functionsRouter := &routers.FunctionsRouter{
+		Config: routers.FunctionsRuntimeConfig{
+			WebUISecretKey: cfg.WebUISecretKey,
+			EnableAPIKeys:  cfg.EnableAPIKeys,
+		},
+		Users:     usersTable,
+		Functions: models.NewFunctionsTable(db),
+	}
+	functionsRouter.Register(mux)
+	skillsRouter := &routers.SkillsRouter{
+		Config: routers.SkillsRuntimeConfig{
+			WebUISecretKey: cfg.WebUISecretKey,
+			EnableAPIKeys:  cfg.EnableAPIKeys,
+		},
+		Users:        usersTable,
+		Skills:       models.NewSkillsTable(db),
+		Groups:       groupsTable,
+		AccessGrants: accessGrantsTable,
+	}
+	skillsRouter.Register(mux)
+	modelsRouter := &routers.ModelsRouter{
+		Config: routers.ModelsRuntimeConfig{
+			WebUISecretKey: cfg.WebUISecretKey,
+			EnableAPIKeys:  cfg.EnableAPIKeys,
+			StaticDir:      cfg.StaticDir,
+		},
+		Users:  usersTable,
+		Models: models.NewModelsTable(db),
+	}
+	modelsRouter.Register(mux)
+	filesRouter := &routers.FilesRouter{
+		Config: routers.FilesRuntimeConfig{
+			WebUISecretKey: cfg.WebUISecretKey,
+			EnableAPIKeys:  cfg.EnableAPIKeys,
+		},
+		Users:   usersTable,
+		Files:   models.NewFilesTable(db),
+		Storage: storage.NewLocalProvider(cfg.UploadDir),
+	}
+	filesRouter.Register(mux)
+	evaluationsRouter := &routers.EvaluationsRouter{
+		Config: &routers.EvaluationsRuntimeConfig{
+			WebUISecretKey:              cfg.WebUISecretKey,
+			EnableAPIKeys:               cfg.EnableAPIKeys,
+			EnableEvaluationArenaModels: cfg.EnableEvaluationArenaModels,
+			EvaluationArenaModels:       cfg.EvaluationArenaModels,
+		},
+		Users:     usersTable,
+		Feedbacks: models.NewFeedbacksTable(db),
+	}
+	evaluationsRouter.Register(mux)
+	toolsRouter := &routers.ToolsRouter{
+		Config: routers.ToolsRuntimeConfig{
+			WebUISecretKey: cfg.WebUISecretKey,
+			EnableAPIKeys:  cfg.EnableAPIKeys,
+		},
+		Users: usersTable,
+		Tools: models.NewToolsTable(db),
+	}
+	toolsRouter.Register(mux)
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte("ok"))

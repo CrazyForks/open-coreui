@@ -26,9 +26,34 @@ func Registered() []Definition {
 			Up:           versions.UpgradeVC69F45358DB4AddFolderTable,
 		},
 		{
+			Revision:     versions.VC0FBF31CA0DBRevision,
+			DownRevision: versions.VC0FBF31CA0DBDownRevision,
+			Up:           versions.UpgradeVC0FBF31CA0DBUpdateFileTable,
+		},
+		{
+			Revision:     versions.VC29FACFE716BRevision,
+			DownRevision: versions.VC29FACFE716BDownRevision,
+			Up:           versions.UpgradeVC29FACFE716BUpdateFileTablePath,
+		},
+		{
+			Revision:     versions.V7826AB40B532Revision,
+			DownRevision: versions.V7826AB40B532DownRevision,
+			Up:           versions.UpgradeV7826AB40B532UpdateFileTable,
+		},
+		{
 			Revision:     versions.V4ACE53FD72C8Revision,
 			DownRevision: versions.V4ACE53FD72C8DownRevision,
 			Up:           versions.UpgradeV4ACE53FD72C8UpdateFolderTableDatetime,
+		},
+		{
+			Revision:     versions.VAF906E964978Revision,
+			DownRevision: versions.VAF906E964978DownRevision,
+			Up:           versions.UpgradeVAF906E964978AddFeedbackTable,
+		},
+		{
+			Revision:     versions.VF1E2D3C4B5A6Revision,
+			DownRevision: versions.VF1E2D3C4B5A6DownRevision,
+			Up:           versions.UpgradeVF1E2D3C4B5A6AddAccessGrantTable,
 		},
 		{
 			Revision:     versions.V922E7A387820Revision,
@@ -49,6 +74,16 @@ func Registered() []Definition {
 			Revision:     versions.V9F0C9CD09105Revision,
 			DownRevision: versions.V9F0C9CD09105DownRevision,
 			Up:           versions.UpgradeV9F0C9CD09105AddNoteTable,
+		},
+		{
+			Revision:     versions.V374D2F66AF06Revision,
+			DownRevision: versions.V374D2F66AF06DownRevision,
+			Up:           versions.UpgradeV374D2F66AF06AddPromptHistoryTable,
+		},
+		{
+			Revision:     versions.VA1B2C3D4E5F6Revision,
+			DownRevision: versions.VA1B2C3D4E5F6DownRevision,
+			Up:           versions.UpgradeVA1B2C3D4E5F6AddSkillTable,
 		},
 		{
 			Revision:     versions.VD31026856C01Revision,

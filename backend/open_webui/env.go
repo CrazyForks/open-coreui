@@ -1,6 +1,7 @@
 package openwebui
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -9,32 +10,35 @@ import (
 )
 
 type RuntimeConfig struct {
-	ListenAddr                 string
-	PythonBaseURL              string
-	DataDir                    string
-	StaticDir                  string
-	DatabaseURL                string
-	DatabaseSchema             string
-	EnableDBMigrations         bool
-	DatabaseEnableSQLiteWAL    bool
-	DatabaseEnableSessionShare bool
-	DatabasePoolSize           int
-	DatabasePoolMaxOverflow    int
-	DatabasePoolTimeout        time.Duration
-	DatabasePoolRecycle        time.Duration
-	WebUIAuth                  bool
-	EnableInitialAdminSignup   bool
-	EnablePasswordAuth         bool
-	EnableAPIKeys              bool
-	EnableSignup               bool
-	DefaultUserRole            string
-	ShowAdminDetails           bool
-	AdminEmail                 string
-	WebUISecretKey             string
-	JWTExpiresIn               string
-	AuthCookieSameSite         string
-	AuthCookieSecure           bool
-	TrustedEmailHeader         string
+	ListenAddr                  string
+	PythonBaseURL               string
+	DataDir                     string
+	StaticDir                   string
+	UploadDir                   string
+	DatabaseURL                 string
+	DatabaseSchema              string
+	EnableDBMigrations          bool
+	DatabaseEnableSQLiteWAL     bool
+	DatabaseEnableSessionShare  bool
+	DatabasePoolSize            int
+	DatabasePoolMaxOverflow     int
+	DatabasePoolTimeout         time.Duration
+	DatabasePoolRecycle         time.Duration
+	WebUIAuth                   bool
+	EnableInitialAdminSignup    bool
+	EnablePasswordAuth          bool
+	EnableAPIKeys               bool
+	EnableSignup                bool
+	DefaultUserRole             string
+	EnableEvaluationArenaModels bool
+	EvaluationArenaModels       []map[string]any
+	ShowAdminDetails            bool
+	AdminEmail                  string
+	WebUISecretKey              string
+	JWTExpiresIn                string
+	AuthCookieSameSite          string
+	AuthCookieSecure            bool
+	TrustedEmailHeader          string
 }
 
 func ConfigFromEnv() RuntimeConfig {
@@ -78,28 +82,35 @@ func ConfigFromEnv() RuntimeConfig {
 			filepath.Join("..", "open-webui", "backend", "open_webui", "static"),
 			filepath.Join("open_webui", "static"),
 		),
-		DatabaseURL:                databaseURL,
-		DatabaseSchema:             strings.TrimSpace(os.Getenv("DATABASE_SCHEMA")),
-		EnableDBMigrations:         parseBoolEnv("ENABLE_DB_MIGRATIONS", true),
-		DatabaseEnableSQLiteWAL:    parseBoolEnv("DATABASE_ENABLE_SQLITE_WAL", false),
-		DatabaseEnableSessionShare: parseBoolEnv("DATABASE_ENABLE_SESSION_SHARING", false),
-		DatabasePoolSize:           parseIntEnv("DATABASE_POOL_SIZE", 0),
-		DatabasePoolMaxOverflow:    parseIntEnv("DATABASE_POOL_MAX_OVERFLOW", 0),
-		DatabasePoolTimeout:        time.Duration(parseIntEnv("DATABASE_POOL_TIMEOUT", 30)) * time.Second,
-		DatabasePoolRecycle:        time.Duration(parseIntEnv("DATABASE_POOL_RECYCLE", 3600)) * time.Second,
-		WebUIAuth:                  parseBoolEnv("WEBUI_AUTH", true),
-		EnableInitialAdminSignup:   parseBoolEnv("ENABLE_INITIAL_ADMIN_SIGNUP", false),
-		EnablePasswordAuth:         parseBoolEnv("ENABLE_PASSWORD_AUTH", true),
-		EnableAPIKeys:              parseBoolEnv("ENABLE_API_KEYS", true),
-		EnableSignup:               parseBoolEnv("ENABLE_SIGNUP", true),
-		DefaultUserRole:            firstNonEmpty(strings.TrimSpace(os.Getenv("DEFAULT_USER_ROLE")), "pending"),
-		ShowAdminDetails:           parseBoolEnv("SHOW_ADMIN_DETAILS", true),
-		AdminEmail:                 strings.TrimSpace(os.Getenv("ADMIN_EMAIL")),
-		WebUISecretKey:             firstNonEmpty(os.Getenv("WEBUI_SECRET_KEY"), "open-coreui-dev-secret"),
-		JWTExpiresIn:               firstNonEmpty(os.Getenv("JWT_EXPIRES_IN"), "4w"),
-		AuthCookieSameSite:         firstNonEmpty(os.Getenv("WEBUI_AUTH_COOKIE_SAME_SITE"), "Lax"),
-		AuthCookieSecure:           parseBoolEnv("WEBUI_AUTH_COOKIE_SECURE", false),
-		TrustedEmailHeader:         strings.TrimSpace(os.Getenv("WEBUI_AUTH_TRUSTED_EMAIL_HEADER")),
+		UploadDir: firstExistingPath(
+			os.Getenv("UPLOAD_DIR"),
+			filepath.Join(dataDir, "uploads"),
+			"uploads",
+		),
+		DatabaseURL:                 databaseURL,
+		DatabaseSchema:              strings.TrimSpace(os.Getenv("DATABASE_SCHEMA")),
+		EnableDBMigrations:          parseBoolEnv("ENABLE_DB_MIGRATIONS", true),
+		DatabaseEnableSQLiteWAL:     parseBoolEnv("DATABASE_ENABLE_SQLITE_WAL", false),
+		DatabaseEnableSessionShare:  parseBoolEnv("DATABASE_ENABLE_SESSION_SHARING", false),
+		DatabasePoolSize:            parseIntEnv("DATABASE_POOL_SIZE", 0),
+		DatabasePoolMaxOverflow:     parseIntEnv("DATABASE_POOL_MAX_OVERFLOW", 0),
+		DatabasePoolTimeout:         time.Duration(parseIntEnv("DATABASE_POOL_TIMEOUT", 30)) * time.Second,
+		DatabasePoolRecycle:         time.Duration(parseIntEnv("DATABASE_POOL_RECYCLE", 3600)) * time.Second,
+		WebUIAuth:                   parseBoolEnv("WEBUI_AUTH", true),
+		EnableInitialAdminSignup:    parseBoolEnv("ENABLE_INITIAL_ADMIN_SIGNUP", false),
+		EnablePasswordAuth:          parseBoolEnv("ENABLE_PASSWORD_AUTH", true),
+		EnableAPIKeys:               parseBoolEnv("ENABLE_API_KEYS", true),
+		EnableSignup:                parseBoolEnv("ENABLE_SIGNUP", true),
+		DefaultUserRole:             firstNonEmpty(strings.TrimSpace(os.Getenv("DEFAULT_USER_ROLE")), "pending"),
+		EnableEvaluationArenaModels: parseBoolEnv("ENABLE_EVALUATION_ARENA_MODELS", false),
+		EvaluationArenaModels:       parseJSONArrayMapEnv("EVALUATION_ARENA_MODELS"),
+		ShowAdminDetails:            parseBoolEnv("SHOW_ADMIN_DETAILS", true),
+		AdminEmail:                  strings.TrimSpace(os.Getenv("ADMIN_EMAIL")),
+		WebUISecretKey:              firstNonEmpty(os.Getenv("WEBUI_SECRET_KEY"), "open-coreui-dev-secret"),
+		JWTExpiresIn:                firstNonEmpty(os.Getenv("JWT_EXPIRES_IN"), "4w"),
+		AuthCookieSameSite:          firstNonEmpty(os.Getenv("WEBUI_AUTH_COOKIE_SAME_SITE"), "Lax"),
+		AuthCookieSecure:            parseBoolEnv("WEBUI_AUTH_COOKIE_SECURE", false),
+		TrustedEmailHeader:          strings.TrimSpace(os.Getenv("WEBUI_AUTH_TRUSTED_EMAIL_HEADER")),
 	}
 }
 
@@ -155,4 +166,16 @@ func firstExistingPath(values ...string) string {
 		}
 	}
 	return "data"
+}
+
+func parseJSONArrayMapEnv(key string) []map[string]any {
+	value := strings.TrimSpace(os.Getenv(key))
+	if value == "" {
+		return []map[string]any{}
+	}
+	var items []map[string]any
+	if err := json.Unmarshal([]byte(value), &items); err != nil {
+		return []map[string]any{}
+	}
+	return items
 }

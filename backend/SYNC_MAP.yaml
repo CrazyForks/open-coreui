@@ -196,7 +196,7 @@ entries:
     last_verified_at: null
   - python_path: "open-webui/backend/open_webui/migrations/versions/374d2f66af06_add_prompt_history_table.py"
     go_path: "backend/open_webui/migrations/versions/374d2f66af06_add_prompt_history_table.go"
-    status: "stub"
+    status: "ported"
     companions: []
     source_submodule_sha: "9bd84258d09eefe7bf975878fb0e31a5dadfe0f8"
     last_verified_at: null
@@ -262,7 +262,7 @@ entries:
     last_verified_at: null
   - python_path: "open-webui/backend/open_webui/migrations/versions/7826ab40b532_update_file_table.py"
     go_path: "backend/open_webui/migrations/versions/7826ab40b532_update_file_table.go"
-    status: "stub"
+    status: "ported"
     companions: []
     source_submodule_sha: "9bd84258d09eefe7bf975878fb0e31a5dadfe0f8"
     last_verified_at: null
@@ -304,7 +304,7 @@ entries:
     last_verified_at: null
   - python_path: "open-webui/backend/open_webui/migrations/versions/a1b2c3d4e5f6_add_skill_table.py"
     go_path: "backend/open_webui/migrations/versions/a1b2c3d4e5f6_add_skill_table.go"
-    status: "stub"
+    status: "ported"
     companions: []
     source_submodule_sha: "9bd84258d09eefe7bf975878fb0e31a5dadfe0f8"
     last_verified_at: null
@@ -316,7 +316,7 @@ entries:
     last_verified_at: null
   - python_path: "open-webui/backend/open_webui/migrations/versions/af906e964978_add_feedback_table.py"
     go_path: "backend/open_webui/migrations/versions/af906e964978_add_feedback_table.go"
-    status: "stub"
+    status: "ported"
     companions: []
     source_submodule_sha: "9bd84258d09eefe7bf975878fb0e31a5dadfe0f8"
     last_verified_at: null
@@ -334,13 +334,13 @@ entries:
     last_verified_at: null
   - python_path: "open-webui/backend/open_webui/migrations/versions/c0fbf31ca0db_update_file_table.py"
     go_path: "backend/open_webui/migrations/versions/c0fbf31ca0db_update_file_table.go"
-    status: "stub"
+    status: "ported"
     companions: []
     source_submodule_sha: "9bd84258d09eefe7bf975878fb0e31a5dadfe0f8"
     last_verified_at: null
   - python_path: "open-webui/backend/open_webui/migrations/versions/c29facfe716b_update_file_table_path.py"
     go_path: "backend/open_webui/migrations/versions/c29facfe716b_update_file_table_path.go"
-    status: "stub"
+    status: "ported"
     companions: []
     source_submodule_sha: "9bd84258d09eefe7bf975878fb0e31a5dadfe0f8"
     last_verified_at: null
@@ -370,13 +370,13 @@ entries:
     last_verified_at: null
   - python_path: "open-webui/backend/open_webui/migrations/versions/f1e2d3c4b5a6_add_access_grant_table.py"
     go_path: "backend/open_webui/migrations/versions/f1e2d3c4b5a6_add_access_grant_table.go"
-    status: "stub"
+    status: "ported"
     companions: []
     source_submodule_sha: "9bd84258d09eefe7bf975878fb0e31a5dadfe0f8"
     last_verified_at: null
   - python_path: "open-webui/backend/open_webui/models/access_grants.py"
     go_path: "backend/open_webui/models/access_grants.go"
-    status: "stub"
+    status: "ported"
     companions: []
     source_submodule_sha: "9bd84258d09eefe7bf975878fb0e31a5dadfe0f8"
     last_verified_at: null
@@ -406,13 +406,13 @@ entries:
     last_verified_at: null
   - python_path: "open-webui/backend/open_webui/models/feedbacks.py"
     go_path: "backend/open_webui/models/feedbacks.go"
-    status: "stub"
+    status: "ported"
     companions: []
     source_submodule_sha: "9bd84258d09eefe7bf975878fb0e31a5dadfe0f8"
     last_verified_at: null
   - python_path: "open-webui/backend/open_webui/models/files.py"
     go_path: "backend/open_webui/models/files.go"
-    status: "stub"
+    status: "ported"
     companions: []
     source_submodule_sha: "9bd84258d09eefe7bf975878fb0e31a5dadfe0f8"
     last_verified_at: null
@@ -424,7 +424,7 @@ entries:
     last_verified_at: null
   - python_path: "open-webui/backend/open_webui/models/functions.py"
     go_path: "backend/open_webui/models/functions.go"
-    status: "stub"
+    status: "ported"
     companions: []
     source_submodule_sha: "9bd84258d09eefe7bf975878fb0e31a5dadfe0f8"
     last_verified_at: null
@@ -454,7 +454,7 @@ entries:
     last_verified_at: null
   - python_path: "open-webui/backend/open_webui/models/models.py"
     go_path: "backend/open_webui/models/models.go"
-    status: "stub"
+    status: "ported"
     companions: []
     source_submodule_sha: "9bd84258d09eefe7bf975878fb0e31a5dadfe0f8"
     last_verified_at: null
@@ -478,13 +478,13 @@ entries:
     last_verified_at: null
   - python_path: "open-webui/backend/open_webui/models/prompts.py"
     go_path: "backend/open_webui/models/prompts.go"
-    status: "stub"
+    status: "ported"
     companions: []
     source_submodule_sha: "9bd84258d09eefe7bf975878fb0e31a5dadfe0f8"
     last_verified_at: null
   - python_path: "open-webui/backend/open_webui/models/skills.py"
     go_path: "backend/open_webui/models/skills.go"
-    status: "stub"
+    status: "ported"
     companions: []
     source_submodule_sha: "9bd84258d09eefe7bf975878fb0e31a5dadfe0f8"
     last_verified_at: null
@@ -496,7 +496,7 @@ entries:
     last_verified_at: null
   - python_path: "open-webui/backend/open_webui/models/tools.py"
     go_path: "backend/open_webui/models/tools.go"
-    status: "stub"
+    status: "ported"
     companions: []
     source_submodule_sha: "9bd84258d09eefe7bf975878fb0e31a5dadfe0f8"
     last_verified_at: null
@@ -892,13 +892,13 @@ entries:
     last_verified_at: null
   - python_path: "open-webui/backend/open_webui/routers/evaluations.py"
     go_path: "backend/open_webui/routers/evaluations.go"
-    status: "stub"
+    status: "ported"
     companions: []
     source_submodule_sha: "9bd84258d09eefe7bf975878fb0e31a5dadfe0f8"
     last_verified_at: null
   - python_path: "open-webui/backend/open_webui/routers/files.py"
     go_path: "backend/open_webui/routers/files.go"
-    status: "stub"
+    status: "ported"
     companions: []
     source_submodule_sha: "9bd84258d09eefe7bf975878fb0e31a5dadfe0f8"
     last_verified_at: null
@@ -910,7 +910,7 @@ entries:
     last_verified_at: null
   - python_path: "open-webui/backend/open_webui/routers/functions.py"
     go_path: "backend/open_webui/routers/functions.go"
-    status: "stub"
+    status: "ported"
     companions: []
     source_submodule_sha: "9bd84258d09eefe7bf975878fb0e31a5dadfe0f8"
     last_verified_at: null
@@ -940,7 +940,7 @@ entries:
     last_verified_at: null
   - python_path: "open-webui/backend/open_webui/routers/models.py"
     go_path: "backend/open_webui/routers/models.go"
-    status: "stub"
+    status: "ported"
     companions: []
     source_submodule_sha: "9bd84258d09eefe7bf975878fb0e31a5dadfe0f8"
     last_verified_at: null
@@ -970,7 +970,7 @@ entries:
     last_verified_at: null
   - python_path: "open-webui/backend/open_webui/routers/prompts.py"
     go_path: "backend/open_webui/routers/prompts.go"
-    status: "stub"
+    status: "ported"
     companions: []
     source_submodule_sha: "9bd84258d09eefe7bf975878fb0e31a5dadfe0f8"
     last_verified_at: null
@@ -988,7 +988,7 @@ entries:
     last_verified_at: null
   - python_path: "open-webui/backend/open_webui/routers/skills.py"
     go_path: "backend/open_webui/routers/skills.go"
-    status: "stub"
+    status: "ported"
     companions: []
     source_submodule_sha: "9bd84258d09eefe7bf975878fb0e31a5dadfe0f8"
     last_verified_at: null
@@ -1006,7 +1006,7 @@ entries:
     last_verified_at: null
   - python_path: "open-webui/backend/open_webui/routers/tools.py"
     go_path: "backend/open_webui/routers/tools.go"
-    status: "stub"
+    status: "ported"
     companions: []
     source_submodule_sha: "9bd84258d09eefe7bf975878fb0e31a5dadfe0f8"
     last_verified_at: null
@@ -1036,7 +1036,7 @@ entries:
     last_verified_at: null
   - python_path: "open-webui/backend/open_webui/storage/provider.py"
     go_path: "backend/open_webui/storage/provider.go"
-    status: "stub"
+    status: "ported"
     companions: []
     source_submodule_sha: "9bd84258d09eefe7bf975878fb0e31a5dadfe0f8"
     last_verified_at: null
