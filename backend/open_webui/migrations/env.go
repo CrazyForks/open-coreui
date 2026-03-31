@@ -21,6 +21,16 @@ func Registered() []Definition {
 			Up:           versions.UpgradeV7E5B5DC7342BInit,
 		},
 		{
+			Revision:     versions.VC69F45358DB4Revision,
+			DownRevision: versions.VC69F45358DB4DownRevision,
+			Up:           versions.UpgradeVC69F45358DB4AddFolderTable,
+		},
+		{
+			Revision:     versions.V4ACE53FD72C8Revision,
+			DownRevision: versions.V4ACE53FD72C8DownRevision,
+			Up:           versions.UpgradeV4ACE53FD72C8UpdateFolderTableDatetime,
+		},
+		{
 			Revision:     versions.V922E7A387820Revision,
 			DownRevision: versions.V922E7A387820DownRevision,
 			Up:           versions.UpgradeV922E7A387820AddGroupTable,
@@ -39,6 +49,11 @@ func Registered() []Definition {
 			Revision:     versions.V9F0C9CD09105Revision,
 			DownRevision: versions.V9F0C9CD09105DownRevision,
 			Up:           versions.UpgradeV9F0C9CD09105AddNoteTable,
+		},
+		{
+			Revision:     versions.VD31026856C01Revision,
+			DownRevision: versions.VD31026856C01DownRevision,
+			Up:           versions.UpgradeVD31026856C01UpdateFolderTableData,
 		},
 		{
 			Revision:     versions.CA81BD47C050Revision,

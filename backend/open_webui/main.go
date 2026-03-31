@@ -95,6 +95,24 @@ func NewHandler(cfg RuntimeConfig) (http.Handler, error) {
 		Notes: models.NewNotesTable(db),
 	}
 	notesRouter.Register(mux)
+	memoriesRouter := &routers.MemoriesRouter{
+		Config: routers.MemoriesRuntimeConfig{
+			WebUISecretKey: cfg.WebUISecretKey,
+			EnableAPIKeys:  cfg.EnableAPIKeys,
+		},
+		Users:    usersTable,
+		Memories: models.NewMemoriesTable(db),
+	}
+	memoriesRouter.Register(mux)
+	foldersRouter := &routers.FoldersRouter{
+		Config: routers.FoldersRuntimeConfig{
+			WebUISecretKey: cfg.WebUISecretKey,
+			EnableAPIKeys:  cfg.EnableAPIKeys,
+		},
+		Users:   usersTable,
+		Folders: models.NewFoldersTable(db),
+	}
+	foldersRouter.Register(mux)
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte("ok"))

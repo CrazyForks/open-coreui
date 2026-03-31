@@ -956,9 +956,16 @@ backend/
 - [x] 12.133 为 notes 增加最小测试
 - [x] 12.134 更新 `backend/SYNC_MAP.yaml` 中 note 相关文件状态
 - [x] 12.135 再次运行 `go test ./...`
-- [ ] 12.136 实现 `backend/open_webui/models/memories.go` 的最小仓储层
-- [ ] 12.137 实现 `backend/open_webui/routers/memories.go` 的最小 CRUD
-- [ ] 12.138 在 `main.go` 接入 memories 路由
-- [ ] 12.139 为 memories 增加最小测试
-- [ ] 12.140 更新 `backend/SYNC_MAP.yaml` 中 memory 相关文件状态
-- [ ] 12.141 再次运行 `go test ./...`
+- [x] 12.136 实现 `backend/open_webui/models/memories.go` 的最小仓储层
+- [x] 12.137 实现 `backend/open_webui/routers/memories.go` 的最小 CRUD
+- [x] 12.138 在 `main.go` 接入 memories 路由
+- [x] 12.139 为 memories 增加最小测试
+- [x] 12.140 更新 `backend/SYNC_MAP.yaml` 中 memory 相关文件状态
+- [x] 12.141 再次运行 `go test ./...`
+- [x] 12.142 实现 folder 相关迁移文件
+- [x] 12.143 实现 `backend/open_webui/models/folders.go` 的最小仓储层
+- [x] 12.144 实现 `backend/open_webui/routers/folders.go` 的最小 CRUD
+- [x] 12.145 在 `main.go` 接入 folders 路由
+- [x] 12.146 为 folders 增加最小测试
+- [x] 12.147 更新 `backend/SYNC_MAP.yaml` 中 folder 相关文件状态
+- [x] 12.148 再次运行 `go test ./...`

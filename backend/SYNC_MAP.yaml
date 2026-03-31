@@ -238,7 +238,7 @@ entries:
     last_verified_at: null
   - python_path: "open-webui/backend/open_webui/migrations/versions/4ace53fd72c8_update_folder_table_datetime.py"
     go_path: "backend/open_webui/migrations/versions/4ace53fd72c8_update_folder_table_datetime.go"
-    status: "stub"
+    status: "ported"
     companions: []
     source_submodule_sha: "9bd84258d09eefe7bf975878fb0e31a5dadfe0f8"
     last_verified_at: null
@@ -352,7 +352,7 @@ entries:
     last_verified_at: null
   - python_path: "open-webui/backend/open_webui/migrations/versions/c69f45358db4_add_folder_table.py"
     go_path: "backend/open_webui/migrations/versions/c69f45358db4_add_folder_table.go"
-    status: "stub"
+    status: "ported"
     companions: []
     source_submodule_sha: "9bd84258d09eefe7bf975878fb0e31a5dadfe0f8"
     last_verified_at: null
@@ -364,7 +364,7 @@ entries:
     last_verified_at: null
   - python_path: "open-webui/backend/open_webui/migrations/versions/d31026856c01_update_folder_table_data.py"
     go_path: "backend/open_webui/migrations/versions/d31026856c01_update_folder_table_data.go"
-    status: "stub"
+    status: "ported"
     companions: []
     source_submodule_sha: "9bd84258d09eefe7bf975878fb0e31a5dadfe0f8"
     last_verified_at: null
@@ -418,7 +418,7 @@ entries:
     last_verified_at: null
   - python_path: "open-webui/backend/open_webui/models/folders.py"
     go_path: "backend/open_webui/models/folders.go"
-    status: "stub"
+    status: "ported"
     companions: []
     source_submodule_sha: "9bd84258d09eefe7bf975878fb0e31a5dadfe0f8"
     last_verified_at: null
@@ -442,7 +442,7 @@ entries:
     last_verified_at: null
   - python_path: "open-webui/backend/open_webui/models/memories.py"
     go_path: "backend/open_webui/models/memories.go"
-    status: "stub"
+    status: "ported"
     companions: []
     source_submodule_sha: "9bd84258d09eefe7bf975878fb0e31a5dadfe0f8"
     last_verified_at: null
@@ -904,7 +904,7 @@ entries:
     last_verified_at: null
   - python_path: "open-webui/backend/open_webui/routers/folders.py"
     go_path: "backend/open_webui/routers/folders.go"
-    status: "stub"
+    status: "ported"
     companions: []
     source_submodule_sha: "9bd84258d09eefe7bf975878fb0e31a5dadfe0f8"
     last_verified_at: null
@@ -934,7 +934,7 @@ entries:
     last_verified_at: null
   - python_path: "open-webui/backend/open_webui/routers/memories.py"
     go_path: "backend/open_webui/routers/memories.go"
-    status: "stub"
+    status: "ported"
     companions: []
     source_submodule_sha: "9bd84258d09eefe7bf975878fb0e31a5dadfe0f8"
     last_verified_at: null
