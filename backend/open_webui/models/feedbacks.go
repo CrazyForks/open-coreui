@@ -127,6 +127,23 @@ func (t *FeedbacksTable) GetFeedbacksByUserID(ctx context.Context, userID string
 	return scanFeedbacks(rows)
 }
 
+func (t *FeedbacksTable) GetFeedbacksByChatID(ctx context.Context, chatID string) ([]Feedback, error) {
+	feedbacks, err := t.GetAllFeedbacks(ctx)
+	if err != nil {
+		return nil, err
+	}
+	items := make([]Feedback, 0)
+	for _, feedback := range feedbacks {
+		if feedback.Meta == nil {
+			continue
+		}
+		if metaChatID, _ := feedback.Meta["chat_id"].(string); metaChatID == chatID {
+			items = append(items, feedback)
+		}
+	}
+	return items, nil
+}
+
 func (t *FeedbacksTable) GetAllFeedbackIDs(ctx context.Context) ([]Feedback, error) {
 	rows, err := t.db.DB.QueryContext(ctx, `SELECT id, user_id, version, type, data, meta, snapshot, created_at, updated_at FROM feedback ORDER BY created_at DESC`)
 	if err != nil {

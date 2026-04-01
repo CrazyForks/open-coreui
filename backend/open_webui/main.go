@@ -260,6 +260,17 @@ func NewHandler(cfg RuntimeConfig) (http.Handler, error) {
 		Users: usersTable,
 	}
 	utilsRouter.Register(mux)
+	analyticsRouter := &routers.AnalyticsRouter{
+		Config: routers.AnalyticsRuntimeConfig{
+			WebUISecretKey: cfg.WebUISecretKey,
+			EnableAPIKeys:  cfg.EnableAPIKeys,
+		},
+		Users:        usersTable,
+		ChatMessages: models.NewChatMessagesTable(db),
+		Chats:        models.NewChatsTable(db),
+		Feedbacks:    models.NewFeedbacksTable(db),
+	}
+	analyticsRouter.Register(mux)
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte("ok"))

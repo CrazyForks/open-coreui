@@ -1080,3 +1080,18 @@ backend/
 - [x] 12.254 为 configs 增加 `tool_servers` 最小测试
 - [x] 12.255 更新 `backend/SYNC_MAP.yaml` 中 configs 状态
 - [x] 12.256 再次运行 `go test ./...`
+- [x] 12.257 为 terminals 补 websocket 代理依赖与运行时配置
+- [x] 12.258 扩展 `backend/open_webui/routers/terminals.go`，补 websocket 终端代理
+- [x] 12.259 为 terminals 增加 websocket 最小测试
+- [x] 12.260 更新 `backend/SYNC_MAP.yaml` 中 terminals 路由状态
+- [x] 12.261 再次运行 `go test ./open_webui/...`
+- [x] 12.262 再次运行 `go test ./...`
+- [x] 12.263 实现 `backend/open_webui/models/chats.go` 的 analytics 所需最小读模型
+- [x] 12.264 实现 `backend/open_webui/models/chat_messages.go` 的 analytics 所需最小读模型
+- [x] 12.265 扩展 `backend/open_webui/models/feedbacks.go`，补 `GetFeedbacksByChatID`
+- [x] 12.266 实现 `backend/open_webui/routers/analytics.go` 的最小统计接口
+- [x] 12.267 在 `main.go` 接入 analytics 路由
+- [x] 12.268 为 analytics 增加最小测试
+- [x] 12.269 更新 `backend/SYNC_MAP.yaml` 中 analytics/chat 相关状态
+- [x] 12.270 再次运行 `go test ./open_webui/...`
+- [x] 12.271 再次运行 `go test ./...`

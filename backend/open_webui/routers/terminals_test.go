@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/gorilla/websocket"
 	"github.com/xxnuo/open-coreui/backend/open_webui/models"
 )
 
@@ -41,7 +43,44 @@ func TestTerminalsRouterListAndProxy(t *testing.T) {
 		},
 	}
 
+	var userID string
 	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if websocket.IsWebSocketUpgrade(r) {
+			upgrader := websocket.Upgrader{
+				CheckOrigin: func(r *http.Request) bool {
+					return true
+				},
+			}
+			conn, err := upgrader.Upgrade(w, r, nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer conn.Close()
+
+			var authPayload map[string]any
+			if err := conn.ReadJSON(&authPayload); err != nil {
+				t.Fatal(err)
+			}
+			if authPayload["type"] != "auth" || authPayload["token"] != "term-secret" {
+				t.Fatalf("unexpected upstream ws auth payload: %v", authPayload)
+			}
+			if r.URL.Query().Get("user_id") != userID {
+				t.Fatalf("unexpected upstream ws user_id: %s", r.URL.Query().Get("user_id"))
+			}
+
+			messageType, message, err := conn.ReadMessage()
+			if err != nil {
+				t.Fatal(err)
+			}
+			if messageType != websocket.TextMessage {
+				t.Fatalf("unexpected upstream ws message type: %d", messageType)
+			}
+			if err := conn.WriteMessage(websocket.TextMessage, []byte("echo:"+string(message))); err != nil {
+				t.Fatal(err)
+			}
+			return
+		}
+
 		w.Header().Set("X-Upstream", "ok")
 		if r.Header.Get("Authorization") != "Bearer term-secret" {
 			w.WriteHeader(http.StatusUnauthorized)
@@ -98,6 +137,8 @@ func TestTerminalsRouterListAndProxy(t *testing.T) {
 	mux := http.NewServeMux()
 	authRouter.Register(mux)
 	terminalsRouter.Register(mux)
+	server := httptest.NewServer(mux)
+	defer server.Close()
 
 	adminSignupBody, _ := json.Marshal(map[string]any{
 		"name":              "Admin User",
@@ -129,7 +170,7 @@ func TestTerminalsRouterListAndProxy(t *testing.T) {
 		t.Fatal(err)
 	}
 	userToken, _ := userSignupPayload["token"].(string)
-	userID, _ := userSignupPayload["id"].(string)
+	userID, _ = userSignupPayload["id"].(string)
 
 	listReq := httptest.NewRequest(http.MethodGet, "/api/v1/terminals/", nil)
 	listReq.Header.Set("Authorization", "Bearer "+userToken)
@@ -168,5 +209,32 @@ func TestTerminalsRouterListAndProxy(t *testing.T) {
 	}
 	if proxyPayload["user_id"] != userID {
 		t.Fatalf("unexpected proxied user id: %v", proxyPayload["user_id"])
+	}
+
+	wsURL := "ws" + strings.TrimPrefix(server.URL, "http") + "/api/v1/terminals/term-public/api/terminals/session-1"
+	wsConn, _, err := websocket.DefaultDialer.Dial(wsURL, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer wsConn.Close()
+
+	if err := wsConn.WriteJSON(map[string]string{
+		"type":  "auth",
+		"token": userToken,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := wsConn.WriteMessage(websocket.TextMessage, []byte("hello")); err != nil {
+		t.Fatal(err)
+	}
+	messageType, message, err := wsConn.ReadMessage()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if messageType != websocket.TextMessage {
+		t.Fatalf("unexpected proxied ws message type: %d", messageType)
+	}
+	if string(message) != "echo:hello" {
+		t.Fatalf("unexpected proxied ws payload: %s", string(message))
 	}
 }

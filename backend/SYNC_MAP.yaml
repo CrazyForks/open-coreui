@@ -394,13 +394,13 @@ entries:
     last_verified_at: null
   - python_path: "open-webui/backend/open_webui/models/chat_messages.py"
     go_path: "backend/open_webui/models/chat_messages.go"
-    status: "stub"
+    status: "partial"
     companions: []
     source_submodule_sha: "9bd84258d09eefe7bf975878fb0e31a5dadfe0f8"
     last_verified_at: null
   - python_path: "open-webui/backend/open_webui/models/chats.py"
     go_path: "backend/open_webui/models/chats.go"
-    status: "stub"
+    status: "partial"
     companions: []
     source_submodule_sha: "9bd84258d09eefe7bf975878fb0e31a5dadfe0f8"
     last_verified_at: null
@@ -856,8 +856,10 @@ entries:
     last_verified_at: null
   - python_path: "open-webui/backend/open_webui/routers/analytics.py"
     go_path: "backend/open_webui/routers/analytics.go"
-    status: "stub"
-    companions: []
+    status: "ported"
+    companions:
+      - "backend/open_webui/models/chat_messages.go"
+      - "backend/open_webui/models/chats.go"
     source_submodule_sha: "9bd84258d09eefe7bf975878fb0e31a5dadfe0f8"
     last_verified_at: null
   - python_path: "open-webui/backend/open_webui/routers/audio.py"
@@ -1001,7 +1003,7 @@ entries:
     last_verified_at: null
   - python_path: "open-webui/backend/open_webui/routers/terminals.py"
     go_path: "backend/open_webui/routers/terminals.go"
-    status: "partial"
+    status: "ported"
     companions: []
     source_submodule_sha: "9bd84258d09eefe7bf975878fb0e31a5dadfe0f8"
     last_verified_at: null

@@ -2,22 +2,27 @@ package routers
 
 import (
 	"bytes"
+	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"net/url"
 	"path"
 	"strings"
+	"time"
 
+	"github.com/gorilla/websocket"
 	"github.com/xxnuo/open-coreui/backend/open_webui/models"
 	"github.com/xxnuo/open-coreui/backend/open_webui/utils"
 	accesscontrol "github.com/xxnuo/open-coreui/backend/open_webui/utils/access_control"
 )
 
 type TerminalsRuntimeConfig struct {
-	WebUISecretKey string
-	EnableAPIKeys  bool
-	State          *ConfigsState
-	HTTPClient     *http.Client
+	WebUISecretKey  string
+	EnableAPIKeys   bool
+	State           *ConfigsState
+	HTTPClient      *http.Client
+	WebSocketDialer *websocket.Dialer
 }
 
 type TerminalsRouter struct {
@@ -32,20 +37,97 @@ type terminalServerResponse struct {
 	Name string `json:"name"`
 }
 
+var (
+	errTerminalInvalidToken  = errors.New("invalid token")
+	errTerminalAPIKeyBlocked = errors.New("api key not allowed")
+	errTerminalNotConfigured = errors.New("terminal server url not configured")
+)
+
 func (h *TerminalsRouter) Register(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/v1/terminals/", h.ListTerminalServers)
+	mux.HandleFunc("GET /api/v1/terminals/{server_id}/api/terminals/{session_id}", h.ProxyTerminalWebSocket)
 	for _, method := range []string{
 		http.MethodGet,
 		http.MethodPost,
 		http.MethodPut,
 		http.MethodPatch,
 		http.MethodDelete,
-		http.MethodHead,
-		http.MethodOptions,
 	} {
 		mux.HandleFunc(method+" /api/v1/terminals/{server_id}", h.ProxyTerminalRoot)
 		mux.HandleFunc(method+" /api/v1/terminals/{server_id}/{path...}", h.ProxyTerminal)
 	}
+}
+
+func (h *TerminalsRouter) ProxyTerminalWebSocket(w http.ResponseWriter, r *http.Request) {
+	clientConn, err := websocketUpgrader().Upgrade(w, r, nil)
+	if err != nil {
+		return
+	}
+
+	user, connection, err := h.resolveAuthenticatedWebSocket(r, clientConn)
+	if err != nil {
+		_ = clientConn.Close()
+		return
+	}
+
+	upstreamURL, err := buildTerminalWebSocketURL(connection, r.PathValue("session_id"), user.ID)
+	if err != nil {
+		_ = closeWebSocket(clientConn, 4003, "Terminal server URL not configured")
+		_ = clientConn.Close()
+		return
+	}
+
+	headers := http.Header{}
+	authType := strings.TrimSpace(stringValue(connection["auth_type"]))
+	if authType == "" {
+		authType = "bearer"
+	}
+	switch authType {
+	case "session":
+		if token := utils.ExtractTokenFromRequest(r); token != "" {
+			headers.Set("Authorization", "Bearer "+token)
+		}
+		if value := r.Header.Get("Cookie"); value != "" {
+			headers.Set("Cookie", value)
+		}
+	case "system_oauth":
+		if token := r.Header.Get("X-OAuth-Access-Token"); token != "" {
+			headers.Set("Authorization", "Bearer "+token)
+		}
+		if value := r.Header.Get("Cookie"); value != "" {
+			headers.Set("Cookie", value)
+		}
+	}
+
+	dialer := websocket.DefaultDialer
+	if h.Config.WebSocketDialer != nil {
+		dialer = h.Config.WebSocketDialer
+	}
+	upstreamConn, _, err := dialer.Dial(upstreamURL, headers)
+	if err != nil {
+		_ = closeWebSocket(clientConn, 1011, "Terminal proxy error")
+		_ = clientConn.Close()
+		return
+	}
+
+	if authType == "bearer" {
+		if err := upstreamConn.WriteJSON(map[string]string{
+			"type":  "auth",
+			"token": stringValue(connection["key"]),
+		}); err != nil {
+			_ = upstreamConn.Close()
+			_ = closeWebSocket(clientConn, 1011, "Terminal proxy error")
+			_ = clientConn.Close()
+			return
+		}
+	}
+
+	done := make(chan struct{}, 2)
+	go proxyWebSocketMessages(clientConn, upstreamConn, done)
+	go proxyWebSocketMessages(upstreamConn, clientConn, done)
+	<-done
+	_ = upstreamConn.Close()
+	_ = clientConn.Close()
 }
 
 func (h *TerminalsRouter) ListTerminalServers(w http.ResponseWriter, r *http.Request) {
@@ -233,36 +315,79 @@ func (h *TerminalsRouter) requireVerifiedUser(w http.ResponseWriter, r *http.Req
 		writeJSON(w, http.StatusUnauthorized, map[string]string{"detail": "invalid token"})
 		return nil, false
 	}
-	if strings.HasPrefix(token, "sk-") {
-		if !h.Config.EnableAPIKeys {
-			writeJSON(w, http.StatusForbidden, map[string]string{"detail": "api key not allowed"})
+	user, err := h.resolveUserByToken(r, token)
+	if err != nil {
+		if errors.Is(err, errTerminalAPIKeyBlocked) {
+			writeJSON(w, http.StatusForbidden, map[string]string{"detail": err.Error()})
 			return nil, false
 		}
-		user, err := h.Users.GetUserByAPIKey(r.Context(), token)
-		if err != nil {
-			writeJSON(w, http.StatusInternalServerError, map[string]string{"detail": err.Error()})
-			return nil, false
-		}
-		if user != nil {
-			return user, true
-		}
-	} else {
-		claims, err := utils.DecodeToken(h.Config.WebUISecretKey, token)
-		if err != nil {
-			writeJSON(w, http.StatusUnauthorized, map[string]string{"detail": "invalid token"})
-			return nil, false
-		}
-		user, err := h.Users.GetUserByID(r.Context(), claims.ID)
-		if err != nil {
-			writeJSON(w, http.StatusInternalServerError, map[string]string{"detail": err.Error()})
-			return nil, false
-		}
-		if user != nil {
-			return user, true
-		}
+		writeJSON(w, http.StatusUnauthorized, map[string]string{"detail": "invalid token"})
+		return nil, false
+	}
+	if user != nil {
+		return user, true
 	}
 	writeJSON(w, http.StatusUnauthorized, map[string]string{"detail": "invalid token"})
 	return nil, false
+}
+
+func (h *TerminalsRouter) resolveUserByToken(r *http.Request, token string) (*models.User, error) {
+	if strings.HasPrefix(token, "sk-") {
+		if !h.Config.EnableAPIKeys {
+			return nil, errTerminalAPIKeyBlocked
+		}
+		return h.Users.GetUserByAPIKey(r.Context(), token)
+	}
+	claims, err := utils.DecodeToken(h.Config.WebUISecretKey, token)
+	if err != nil {
+		return nil, errTerminalInvalidToken
+	}
+	return h.Users.GetUserByID(r.Context(), claims.ID)
+}
+
+func (h *TerminalsRouter) resolveAuthenticatedWebSocket(r *http.Request, clientConn *websocket.Conn) (*models.User, map[string]any, error) {
+	_, message, err := clientConn.ReadMessage()
+	if err != nil {
+		_ = closeWebSocket(clientConn, 4001, "Invalid token")
+		return nil, nil, err
+	}
+
+	var payload map[string]any
+	if err := json.Unmarshal(message, &payload); err != nil {
+		_ = closeWebSocket(clientConn, 4001, "Invalid token")
+		return nil, nil, err
+	}
+	if stringValue(payload["type"]) != "auth" {
+		_ = closeWebSocket(clientConn, 4001, "Expected auth message")
+		return nil, nil, errTerminalInvalidToken
+	}
+
+	user, err := h.resolveUserByToken(r, stringValue(payload["token"]))
+	if err != nil || user == nil {
+		_ = closeWebSocket(clientConn, 4001, "Invalid token")
+		if err != nil {
+			return nil, nil, err
+		}
+		return nil, nil, errTerminalInvalidToken
+	}
+
+	connection, found := h.connectionByID(r.PathValue("server_id"))
+	if !found || !connectionEnabled(connection) {
+		_ = closeWebSocket(clientConn, 4004, "Terminal server not found")
+		return nil, nil, errTerminalInvalidToken
+	}
+
+	userGroupIDs, err := h.userGroupIDs(r, user.ID)
+	if err != nil {
+		_ = closeWebSocket(clientConn, 4003, "Access denied")
+		return nil, nil, err
+	}
+	if !accesscontrol.HasConnectionAccess(user, connection, userGroupIDs) {
+		_ = closeWebSocket(clientConn, 4003, "Access denied")
+		return nil, nil, errTerminalInvalidToken
+	}
+
+	return user, connection, nil
 }
 
 func sanitizeTerminalProxyPath(rawPath string) (string, bool) {
@@ -312,4 +437,63 @@ func connectionEnabled(connection map[string]any) bool {
 func stringValue(value any) string {
 	stringValue, _ := value.(string)
 	return stringValue
+}
+
+func websocketUpgrader() *websocket.Upgrader {
+	return &websocket.Upgrader{
+		CheckOrigin: func(r *http.Request) bool {
+			return true
+		},
+	}
+}
+
+func buildTerminalWebSocketURL(connection map[string]any, sessionID string, userID string) (string, error) {
+	baseURL := strings.TrimRight(stringValue(connection["url"]), "/")
+	if baseURL == "" {
+		return "", errTerminalNotConfigured
+	}
+	switch {
+	case strings.HasPrefix(baseURL, "https://"):
+		baseURL = "wss://" + strings.TrimPrefix(baseURL, "https://")
+	case strings.HasPrefix(baseURL, "http://"):
+		baseURL = "ws://" + strings.TrimPrefix(baseURL, "http://")
+	case strings.HasPrefix(baseURL, "wss://"), strings.HasPrefix(baseURL, "ws://"):
+	default:
+		return "", errTerminalNotConfigured
+	}
+
+	targetURL := baseURL
+	if policyID := strings.TrimSpace(stringValue(connection["policy_id"])); policyID != "" {
+		targetURL += "/p/" + url.PathEscape(policyID)
+	}
+	targetURL += "/api/terminals/" + url.PathEscape(sessionID)
+	params := url.Values{}
+	params.Set("user_id", userID)
+	targetURL += "?" + params.Encode()
+	return targetURL, nil
+}
+
+func proxyWebSocketMessages(source *websocket.Conn, target *websocket.Conn, done chan<- struct{}) {
+	defer func() {
+		done <- struct{}{}
+	}()
+	for {
+		messageType, message, err := source.ReadMessage()
+		if err != nil {
+			return
+		}
+		switch messageType {
+		case websocket.TextMessage, websocket.BinaryMessage, websocket.PingMessage, websocket.PongMessage:
+			if err := target.WriteMessage(messageType, message); err != nil {
+				return
+			}
+		case websocket.CloseMessage:
+			_ = target.WriteMessage(websocket.CloseMessage, message)
+			return
+		}
+	}
+}
+
+func closeWebSocket(conn *websocket.Conn, code int, text string) error {
+	return conn.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(code, text), time.Now().Add(time.Second))
 }
