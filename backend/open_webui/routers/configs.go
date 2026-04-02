@@ -109,7 +109,6 @@ type modelsConfigForm struct {
 	DefaultModelMetadata map[string]any `json:"DEFAULT_MODEL_METADATA"`
 	DefaultModelParams   map[string]any `json:"DEFAULT_MODEL_PARAMS"`
 }
-
 type terminalServerConnectionForm struct {
 	URL      string         `json:"url"`
 	Key      string         `json:"key"`
@@ -428,7 +427,6 @@ func (h *ConfigsRouter) VerifyToolServersConfig(w http.ResponseWriter, r *http.R
 	}
 	writeJSON(w, http.StatusOK, responsePayload)
 }
-
 func (h *ConfigsRouter) SetDefaultSuggestions(w http.ResponseWriter, r *http.Request) {
 	if _, ok := h.requireAdminUser(w, r); !ok {
 		return
@@ -600,7 +598,6 @@ func (h *ConfigsRouter) SetModelsConfig(w http.ResponseWriter, r *http.Request) 
 	}
 	writeJSON(w, http.StatusOK, h.modelsConfigResponse())
 }
-
 func (h *ConfigsRouter) loadConfig(ctx context.Context) (map[string]any, error) {
 	if h.Store == nil {
 		return defaultConfigPayload(), nil
@@ -1040,7 +1037,6 @@ func optionalConfigString(value string) *string {
 	result := value
 	return &result
 }
-
 func buildConfigsBearerHeaders(authType string, key string, extras map[string]string) http.Header {
 	headers := http.Header{}
 	if strings.TrimSpace(authType) == "bearer" && strings.TrimSpace(key) != "" {

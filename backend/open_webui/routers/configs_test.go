@@ -414,7 +414,6 @@ func TestConfigsRouterImportExportConnections(t *testing.T) {
 	if !ok || codeInterpreterPrompt != "prompt" {
 		t.Fatalf("unexpected code_interpreter.prompt_template: %v", codeInterpreterPrompt)
 	}
-
 	modelDefaultsReq := httptest.NewRequest(http.MethodGet, "/api/v1/configs/models/defaults", nil)
 	modelDefaultsReq.Header.Set("Authorization", "Bearer "+token)
 	modelDefaultsRes := httptest.NewRecorder()

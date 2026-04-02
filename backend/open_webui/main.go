@@ -294,7 +294,11 @@ func NewHandler(cfg RuntimeConfig) (http.Handler, error) {
 			tasksState.QueryGenerationPromptTemplate = text
 		}
 	}
-	if value, ok := GetConfigValue(configData, "task.tools.prompt_template"); ok {
+	if value, ok := GetConfigValue(configData, "task.tools.function_calling.prompt_template"); ok {
+		if text, typeOK := value.(string); typeOK {
+			tasksState.ToolsFunctionCallingPromptTemplate = text
+		}
+	} else if value, ok := GetConfigValue(configData, "task.tools.prompt_template"); ok {
 		if text, typeOK := value.(string); typeOK {
 			tasksState.ToolsFunctionCallingPromptTemplate = text
 		}
@@ -578,7 +582,6 @@ func decodeRuntimeInt(value any) (int, bool) {
 		return 0, false
 	}
 }
-
 func cloneRuntimeStringList(source []string) []string {
 	if source == nil {
 		return []string{}

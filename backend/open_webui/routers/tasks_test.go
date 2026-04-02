@@ -120,7 +120,7 @@ func TestTasksRouterConfigAndActiveChats(t *testing.T) {
 	if configPayload["TASK_MODEL"] != "model-a" {
 		t.Fatalf("unexpected TASK_MODEL: %v", configPayload["TASK_MODEL"])
 	}
-	value, ok := getConfigPathValue(store.data, "task.tools.prompt_template")
+	value, ok := getConfigPathValue(store.data, "task.tools.function_calling.prompt_template")
 	if !ok || value != "tool-template" {
 		t.Fatalf("unexpected persisted tool prompt: %v", value)
 	}

@@ -135,34 +135,37 @@ func (h *TasksRouter) UpdateTaskConfig(w http.ResponseWriter, r *http.Request) {
 	state.ToolsFunctionCallingPromptTemplate = form.ToolsFunctionCallingPromptTemplate
 	state.VoiceModePromptTemplate = derefOptionalTaskString(form.VoiceModePromptTemplate)
 
-	configData, err := h.Config.Store.Load(r.Context())
-	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"detail": err.Error()})
-		return
+	if h.Config.Store != nil {
+		configData, err := h.Config.Store.Load(r.Context())
+		if err != nil {
+			writeJSON(w, http.StatusInternalServerError, map[string]string{"detail": err.Error()})
+			return
+		}
+		if configData == nil {
+			configData = defaultConfigPayload()
+		}
+		setConfigPathValue(configData, "task.model.default", state.TaskModel)
+		setConfigPathValue(configData, "task.model.external", state.TaskModelExternal)
+		setConfigPathValue(configData, "task.title.enable", state.EnableTitleGeneration)
+		setConfigPathValue(configData, "task.title.prompt_template", state.TitleGenerationPromptTemplate)
+		setConfigPathValue(configData, "task.image.prompt_template", state.ImagePromptGenerationPromptTemplate)
+		setConfigPathValue(configData, "task.autocomplete.enable", state.EnableAutocompleteGeneration)
+		setConfigPathValue(configData, "task.autocomplete.input_max_length", state.AutocompleteGenerationInputMaxLength)
+		setConfigPathValue(configData, "task.tags.prompt_template", state.TagsGenerationPromptTemplate)
+		setConfigPathValue(configData, "task.follow_up.prompt_template", state.FollowUpGenerationPromptTemplate)
+		setConfigPathValue(configData, "task.follow_up.enable", state.EnableFollowUpGeneration)
+		setConfigPathValue(configData, "task.tags.enable", state.EnableTagsGeneration)
+		setConfigPathValue(configData, "task.query.search.enable", state.EnableSearchQueryGeneration)
+		setConfigPathValue(configData, "task.query.retrieval.enable", state.EnableRetrievalQueryGeneration)
+		setConfigPathValue(configData, "task.query.prompt_template", state.QueryGenerationPromptTemplate)
+		setConfigPathValue(configData, "task.tools.function_calling.prompt_template", state.ToolsFunctionCallingPromptTemplate)
+		setConfigPathValue(configData, "task.voice.prompt_template", state.VoiceModePromptTemplate)
+		if err := h.Config.Store.Save(r.Context(), configData); err != nil {
+			writeJSON(w, http.StatusInternalServerError, map[string]string{"detail": err.Error()})
+			return
+		}
 	}
-	if configData == nil {
-		configData = defaultConfigPayload()
-	}
-	setConfigPathValue(configData, "task.model.default", state.TaskModel)
-	setConfigPathValue(configData, "task.model.external", state.TaskModelExternal)
-	setConfigPathValue(configData, "task.title.enable", state.EnableTitleGeneration)
-	setConfigPathValue(configData, "task.title.prompt_template", state.TitleGenerationPromptTemplate)
-	setConfigPathValue(configData, "task.image.prompt_template", state.ImagePromptGenerationPromptTemplate)
-	setConfigPathValue(configData, "task.autocomplete.enable", state.EnableAutocompleteGeneration)
-	setConfigPathValue(configData, "task.autocomplete.input_max_length", state.AutocompleteGenerationInputMaxLength)
-	setConfigPathValue(configData, "task.tags.prompt_template", state.TagsGenerationPromptTemplate)
-	setConfigPathValue(configData, "task.follow_up.prompt_template", state.FollowUpGenerationPromptTemplate)
-	setConfigPathValue(configData, "task.follow_up.enable", state.EnableFollowUpGeneration)
-	setConfigPathValue(configData, "task.tags.enable", state.EnableTagsGeneration)
-	setConfigPathValue(configData, "task.query.search.enable", state.EnableSearchQueryGeneration)
-	setConfigPathValue(configData, "task.query.retrieval.enable", state.EnableRetrievalQueryGeneration)
-	setConfigPathValue(configData, "task.query.prompt_template", state.QueryGenerationPromptTemplate)
-	setConfigPathValue(configData, "task.tools.prompt_template", state.ToolsFunctionCallingPromptTemplate)
-	setConfigPathValue(configData, "task.voice.prompt_template", state.VoiceModePromptTemplate)
-	if err := h.Config.Store.Save(r.Context(), configData); err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"detail": err.Error()})
-		return
-	}
+
 	writeJSON(w, http.StatusOK, h.taskConfigResponse())
 }
 
