@@ -1095,3 +1095,42 @@ backend/
 - [x] 12.269 更新 `backend/SYNC_MAP.yaml` 中 analytics/chat 相关状态
 - [x] 12.270 再次运行 `go test ./open_webui/...`
 - [x] 12.271 再次运行 `go test ./...`
+- [x] 12.295 扩展运行配置与 `ConfigsState`，补 suggestions 与 banners
+- [x] 12.296 扩展 `backend/open_webui/routers/configs.go`，补 `suggestions` 与 `banners`
+- [x] 12.297 在 `main.go` 加载 suggestions 与 banners 配置到运行态
+- [x] 12.298 为 configs 增加 suggestions 与 banners 测试
+- [x] 12.299 再次运行 `go test ./open_webui/...`
+- [x] 12.300 再次运行 `go test ./...`
+- [x] 12.307 扩展运行配置，补 tasks 配置项
+- [x] 12.308 实现 `backend/open_webui/routers/tasks.go` 的 `active/chats` 与 `config`
+- [x] 12.309 在 `main.go` 接入 tasks 路由并加载 task config
+- [x] 12.310 为 tasks 增加最小测试
+- [x] 12.311 更新 `backend/SYNC_MAP.yaml` 中 tasks 路由状态
+- [x] 12.312 再次运行 `go test ./open_webui/...`
+- [x] 12.313 再次运行 `go test ./...`
+- [x] 12.314 扩展运行配置与 `ConfigsState`，补 `models/defaults` 相关字段
+- [x] 12.315 扩展 `backend/open_webui/routers/configs.go`，补 `models/defaults` 与 `models`
+- [x] 12.316 在 `main.go` 加载 `models/defaults` 配置到运行态
+- [x] 12.317 为 configs 增加 `models/defaults` 测试
+- [x] 12.318 再次运行 `go test ./open_webui/...`
+- [x] 12.319 再次运行 `go test ./...`
+- [x] 12.324 扩展 `backend/open_webui/routers/tasks.go`，补一批轻量 completions
+- [x] 12.325 为 tasks completions 增加最小测试
+- [x] 12.326 更新 `backend/SYNC_MAP.yaml` 中 tasks 路由状态
+- [x] 12.327 再次运行 `go test ./open_webui/...`
+- [x] 12.328 再次运行 `go test ./...`
+- [x] 12.329 扩展 `backend/open_webui/routers/tasks.go`，补 `image_prompt` 与 `moa`
+- [x] 12.330 为 tasks 增加 `image_prompt` 与 `moa` 最小测试
+- [x] 12.331 更新 `backend/SYNC_MAP.yaml` 中 tasks 路由状态
+- [x] 12.332 再次运行 `go test ./open_webui/...`
+- [x] 12.333 再次运行 `go test ./...`
+- [x] 12.320 扩展 `backend/open_webui/routers/configs.go`，补 verify 类接口
+- [x] 12.321 为 configs 增加 verify 类接口测试
+- [x] 12.322 再次运行 `go test ./open_webui/...`
+- [x] 12.323 再次运行 `go test ./...`
+- [x] 12.301 扩展运行配置与 `ConfigsState`，补 `code_execution` 配置项
+- [x] 12.302 扩展 `backend/open_webui/routers/configs.go`，补 `code_execution`
+- [x] 12.303 在 `main.go` 加载 `code_execution` 配置到运行态
+- [x] 12.304 为 configs 增加 `code_execution` 测试
+- [x] 12.305 再次运行 `go test ./open_webui/...`
+- [x] 12.306 再次运行 `go test ./...`

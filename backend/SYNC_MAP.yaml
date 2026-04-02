@@ -997,7 +997,7 @@ entries:
     last_verified_at: null
   - python_path: "open-webui/backend/open_webui/routers/tasks.py"
     go_path: "backend/open_webui/routers/tasks.go"
-    status: "stub"
+    status: "partial"
     companions: []
     source_submodule_sha: "9bd84258d09eefe7bf975878fb0e31a5dadfe0f8"
     last_verified_at: null

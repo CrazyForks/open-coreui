@@ -44,10 +44,50 @@ func NewHandler(cfg RuntimeConfig) (http.Handler, error) {
 		return nil, err
 	}
 	configsState := &routers.ConfigsState{
-		EnableDirectConnections:   cfg.EnableDirectConnections,
-		EnableBaseModelsCache:     cfg.EnableBaseModelsCache,
-		ToolServerConnections:     cloneRuntimeConfigList(cfg.ToolServerConnections),
-		TerminalServerConnections: cloneRuntimeConfigList(cfg.TerminalServerConnections),
+		EnableDirectConnections:            cfg.EnableDirectConnections,
+		EnableBaseModelsCache:              cfg.EnableBaseModelsCache,
+		ToolServerConnections:              cloneRuntimeConfigList(cfg.ToolServerConnections),
+		TerminalServerConnections:          cloneRuntimeConfigList(cfg.TerminalServerConnections),
+		DefaultPromptSuggestions:           cloneRuntimeConfigList(cfg.DefaultPromptSuggestions),
+		Banners:                            cloneRuntimeConfigList(cfg.WebUIBanners),
+		DefaultModels:                      cfg.DefaultModels,
+		DefaultPinnedModels:                cfg.DefaultPinnedModels,
+		ModelOrderList:                     cloneRuntimeStringList(cfg.ModelOrderList),
+		DefaultModelMetadata:               cloneRuntimeMap(cfg.DefaultModelMetadata),
+		DefaultModelParams:                 cloneRuntimeMap(cfg.DefaultModelParams),
+		EnableCodeExecution:                cfg.EnableCodeExecution,
+		CodeExecutionEngine:                cfg.CodeExecutionEngine,
+		CodeExecutionJupyterURL:            cfg.CodeExecutionJupyterURL,
+		CodeExecutionJupyterAuth:           cfg.CodeExecutionJupyterAuth,
+		CodeExecutionJupyterAuthToken:      cfg.CodeExecutionJupyterAuthToken,
+		CodeExecutionJupyterAuthPassword:   cfg.CodeExecutionJupyterAuthPassword,
+		CodeExecutionJupyterTimeout:        cfg.CodeExecutionJupyterTimeout,
+		EnableCodeInterpreter:              cfg.EnableCodeInterpreter,
+		CodeInterpreterEngine:              cfg.CodeInterpreterEngine,
+		CodeInterpreterPromptTemplate:      cfg.CodeInterpreterPromptTemplate,
+		CodeInterpreterJupyterURL:          cfg.CodeInterpreterJupyterURL,
+		CodeInterpreterJupyterAuth:         cfg.CodeInterpreterJupyterAuth,
+		CodeInterpreterJupyterAuthToken:    cfg.CodeInterpreterJupyterAuthToken,
+		CodeInterpreterJupyterAuthPassword: cfg.CodeInterpreterJupyterAuthPassword,
+		CodeInterpreterJupyterTimeout:      cfg.CodeInterpreterJupyterTimeout,
+	}
+	tasksState := &routers.TasksState{
+		TaskModel:                            cfg.TaskModel,
+		TaskModelExternal:                    cfg.TaskModelExternal,
+		EnableTitleGeneration:                cfg.EnableTitleGeneration,
+		TitleGenerationPromptTemplate:        cfg.TitleGenerationPromptTemplate,
+		ImagePromptGenerationPromptTemplate:  cfg.ImagePromptGenerationPromptTemplate,
+		EnableAutocompleteGeneration:         cfg.EnableAutocompleteGeneration,
+		AutocompleteGenerationInputMaxLength: cfg.AutocompleteGenerationInputMaxLength,
+		TagsGenerationPromptTemplate:         cfg.TagsGenerationPromptTemplate,
+		FollowUpGenerationPromptTemplate:     cfg.FollowUpGenerationPromptTemplate,
+		EnableFollowUpGeneration:             cfg.EnableFollowUpGeneration,
+		EnableTagsGeneration:                 cfg.EnableTagsGeneration,
+		EnableSearchQueryGeneration:          cfg.EnableSearchQueryGeneration,
+		EnableRetrievalQueryGeneration:       cfg.EnableRetrievalQueryGeneration,
+		QueryGenerationPromptTemplate:        cfg.QueryGenerationPromptTemplate,
+		ToolsFunctionCallingPromptTemplate:   cfg.ToolsFunctionCallingPromptTemplate,
+		VoiceModePromptTemplate:              cfg.VoiceModePromptTemplate,
 	}
 	configData, err := configStore.Load(ctx)
 	if err != nil {
@@ -72,6 +112,196 @@ func NewHandler(cfg RuntimeConfig) (http.Handler, error) {
 	if value, ok := GetConfigValue(configData, "terminal_server.connections"); ok {
 		if connections, typeOK := decodeRuntimeConfigList(value); typeOK {
 			configsState.TerminalServerConnections = connections
+		}
+	}
+	if value, ok := GetConfigValue(configData, "ui.prompt_suggestions"); ok {
+		if suggestions, typeOK := decodeRuntimeConfigList(value); typeOK {
+			configsState.DefaultPromptSuggestions = suggestions
+		}
+	}
+	if value, ok := GetConfigValue(configData, "ui.banners"); ok {
+		if banners, typeOK := decodeRuntimeConfigList(value); typeOK {
+			configsState.Banners = banners
+		}
+	}
+	if value, ok := GetConfigValue(configData, "ui.default_models"); ok {
+		if text, typeOK := value.(string); typeOK {
+			configsState.DefaultModels = text
+		}
+	}
+	if value, ok := GetConfigValue(configData, "ui.default_pinned_models"); ok {
+		if text, typeOK := value.(string); typeOK {
+			configsState.DefaultPinnedModels = text
+		}
+	}
+	if value, ok := GetConfigValue(configData, "ui.model_order_list"); ok {
+		if items, typeOK := decodeRuntimeStringList(value); typeOK {
+			configsState.ModelOrderList = items
+		}
+	}
+	if value, ok := GetConfigValue(configData, "models.default_metadata"); ok {
+		if payload, typeOK := decodeRuntimeMap(value); typeOK {
+			configsState.DefaultModelMetadata = payload
+		}
+	}
+	if value, ok := GetConfigValue(configData, "models.default_params"); ok {
+		if payload, typeOK := decodeRuntimeMap(value); typeOK {
+			configsState.DefaultModelParams = payload
+		}
+	}
+	if value, ok := GetConfigValue(configData, "code_execution.enable"); ok {
+		if enabled, typeOK := value.(bool); typeOK {
+			configsState.EnableCodeExecution = enabled
+		}
+	}
+	if value, ok := GetConfigValue(configData, "code_execution.engine"); ok {
+		if text, typeOK := value.(string); typeOK {
+			configsState.CodeExecutionEngine = text
+		}
+	}
+	if value, ok := GetConfigValue(configData, "code_execution.jupyter.url"); ok {
+		if text, typeOK := value.(string); typeOK {
+			configsState.CodeExecutionJupyterURL = text
+		}
+	}
+	if value, ok := GetConfigValue(configData, "code_execution.jupyter.auth"); ok {
+		if text, typeOK := value.(string); typeOK {
+			configsState.CodeExecutionJupyterAuth = text
+		}
+	}
+	if value, ok := GetConfigValue(configData, "code_execution.jupyter.auth_token"); ok {
+		if text, typeOK := value.(string); typeOK {
+			configsState.CodeExecutionJupyterAuthToken = text
+		}
+	}
+	if value, ok := GetConfigValue(configData, "code_execution.jupyter.auth_password"); ok {
+		if text, typeOK := value.(string); typeOK {
+			configsState.CodeExecutionJupyterAuthPassword = text
+		}
+	}
+	if value, ok := GetConfigValue(configData, "code_execution.jupyter.timeout"); ok {
+		if timeout, typeOK := decodeRuntimeInt(value); typeOK {
+			configsState.CodeExecutionJupyterTimeout = timeout
+		}
+	}
+	if value, ok := GetConfigValue(configData, "code_interpreter.enable"); ok {
+		if enabled, typeOK := value.(bool); typeOK {
+			configsState.EnableCodeInterpreter = enabled
+		}
+	}
+	if value, ok := GetConfigValue(configData, "code_interpreter.engine"); ok {
+		if text, typeOK := value.(string); typeOK {
+			configsState.CodeInterpreterEngine = text
+		}
+	}
+	if value, ok := GetConfigValue(configData, "code_interpreter.prompt_template"); ok {
+		if text, typeOK := value.(string); typeOK {
+			configsState.CodeInterpreterPromptTemplate = text
+		}
+	}
+	if value, ok := GetConfigValue(configData, "code_interpreter.jupyter.url"); ok {
+		if text, typeOK := value.(string); typeOK {
+			configsState.CodeInterpreterJupyterURL = text
+		}
+	}
+	if value, ok := GetConfigValue(configData, "code_interpreter.jupyter.auth"); ok {
+		if text, typeOK := value.(string); typeOK {
+			configsState.CodeInterpreterJupyterAuth = text
+		}
+	}
+	if value, ok := GetConfigValue(configData, "code_interpreter.jupyter.auth_token"); ok {
+		if text, typeOK := value.(string); typeOK {
+			configsState.CodeInterpreterJupyterAuthToken = text
+		}
+	}
+	if value, ok := GetConfigValue(configData, "code_interpreter.jupyter.auth_password"); ok {
+		if text, typeOK := value.(string); typeOK {
+			configsState.CodeInterpreterJupyterAuthPassword = text
+		}
+	}
+	if value, ok := GetConfigValue(configData, "code_interpreter.jupyter.timeout"); ok {
+		if timeout, typeOK := decodeRuntimeInt(value); typeOK {
+			configsState.CodeInterpreterJupyterTimeout = timeout
+		}
+	}
+	if value, ok := GetConfigValue(configData, "task.model.default"); ok {
+		if text, typeOK := value.(string); typeOK {
+			tasksState.TaskModel = text
+		}
+	}
+	if value, ok := GetConfigValue(configData, "task.model.external"); ok {
+		if text, typeOK := value.(string); typeOK {
+			tasksState.TaskModelExternal = text
+		}
+	}
+	if value, ok := GetConfigValue(configData, "task.title.enable"); ok {
+		if enabled, typeOK := value.(bool); typeOK {
+			tasksState.EnableTitleGeneration = enabled
+		}
+	}
+	if value, ok := GetConfigValue(configData, "task.title.prompt_template"); ok {
+		if text, typeOK := value.(string); typeOK {
+			tasksState.TitleGenerationPromptTemplate = text
+		}
+	}
+	if value, ok := GetConfigValue(configData, "task.image.prompt_template"); ok {
+		if text, typeOK := value.(string); typeOK {
+			tasksState.ImagePromptGenerationPromptTemplate = text
+		}
+	}
+	if value, ok := GetConfigValue(configData, "task.autocomplete.enable"); ok {
+		if enabled, typeOK := value.(bool); typeOK {
+			tasksState.EnableAutocompleteGeneration = enabled
+		}
+	}
+	if value, ok := GetConfigValue(configData, "task.autocomplete.input_max_length"); ok {
+		if amount, typeOK := decodeRuntimeInt(value); typeOK {
+			tasksState.AutocompleteGenerationInputMaxLength = amount
+		}
+	}
+	if value, ok := GetConfigValue(configData, "task.tags.prompt_template"); ok {
+		if text, typeOK := value.(string); typeOK {
+			tasksState.TagsGenerationPromptTemplate = text
+		}
+	}
+	if value, ok := GetConfigValue(configData, "task.follow_up.prompt_template"); ok {
+		if text, typeOK := value.(string); typeOK {
+			tasksState.FollowUpGenerationPromptTemplate = text
+		}
+	}
+	if value, ok := GetConfigValue(configData, "task.follow_up.enable"); ok {
+		if enabled, typeOK := value.(bool); typeOK {
+			tasksState.EnableFollowUpGeneration = enabled
+		}
+	}
+	if value, ok := GetConfigValue(configData, "task.tags.enable"); ok {
+		if enabled, typeOK := value.(bool); typeOK {
+			tasksState.EnableTagsGeneration = enabled
+		}
+	}
+	if value, ok := GetConfigValue(configData, "task.query.search.enable"); ok {
+		if enabled, typeOK := value.(bool); typeOK {
+			tasksState.EnableSearchQueryGeneration = enabled
+		}
+	}
+	if value, ok := GetConfigValue(configData, "task.query.retrieval.enable"); ok {
+		if enabled, typeOK := value.(bool); typeOK {
+			tasksState.EnableRetrievalQueryGeneration = enabled
+		}
+	}
+	if value, ok := GetConfigValue(configData, "task.query.prompt_template"); ok {
+		if text, typeOK := value.(string); typeOK {
+			tasksState.QueryGenerationPromptTemplate = text
+		}
+	}
+	if value, ok := GetConfigValue(configData, "task.tools.prompt_template"); ok {
+		if text, typeOK := value.(string); typeOK {
+			tasksState.ToolsFunctionCallingPromptTemplate = text
+		}
+	}
+	if value, ok := GetConfigValue(configData, "task.voice.prompt_template"); ok {
+		if text, typeOK := value.(string); typeOK {
+			tasksState.VoiceModePromptTemplate = text
 		}
 	}
 
@@ -271,6 +501,16 @@ func NewHandler(cfg RuntimeConfig) (http.Handler, error) {
 		Feedbacks:    models.NewFeedbacksTable(db),
 	}
 	analyticsRouter.Register(mux)
+	tasksRouter := &routers.TasksRouter{
+		Config: routers.TasksRuntimeConfig{
+			WebUISecretKey: cfg.WebUISecretKey,
+			EnableAPIKeys:  cfg.EnableAPIKeys,
+			State:          tasksState,
+			Store:          configStore,
+		},
+		Users: usersTable,
+	}
+	tasksRouter.Register(mux)
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte("ok"))
@@ -324,4 +564,77 @@ func decodeRuntimeConfigList(value any) ([]map[string]any, bool) {
 		return nil, false
 	}
 	return items, true
+}
+
+func decodeRuntimeInt(value any) (int, bool) {
+	switch typed := value.(type) {
+	case int:
+		return typed, true
+	case int64:
+		return int(typed), true
+	case float64:
+		return int(typed), true
+	default:
+		return 0, false
+	}
+}
+
+func cloneRuntimeStringList(source []string) []string {
+	if source == nil {
+		return []string{}
+	}
+	body, err := json.Marshal(source)
+	if err != nil {
+		return []string{}
+	}
+	var target []string
+	if err := json.Unmarshal(body, &target); err != nil {
+		return []string{}
+	}
+	return target
+}
+
+func decodeRuntimeStringList(value any) ([]string, bool) {
+	if value == nil {
+		return []string{}, true
+	}
+	body, err := json.Marshal(value)
+	if err != nil {
+		return nil, false
+	}
+	var items []string
+	if err := json.Unmarshal(body, &items); err != nil {
+		return nil, false
+	}
+	return items, true
+}
+
+func cloneRuntimeMap(source map[string]any) map[string]any {
+	if source == nil {
+		return map[string]any{}
+	}
+	body, err := json.Marshal(source)
+	if err != nil {
+		return map[string]any{}
+	}
+	var target map[string]any
+	if err := json.Unmarshal(body, &target); err != nil {
+		return map[string]any{}
+	}
+	return target
+}
+
+func decodeRuntimeMap(value any) (map[string]any, bool) {
+	if value == nil {
+		return map[string]any{}, true
+	}
+	body, err := json.Marshal(value)
+	if err != nil {
+		return nil, false
+	}
+	var payload map[string]any
+	if err := json.Unmarshal(body, &payload); err != nil {
+		return nil, false
+	}
+	return payload, true
 }
